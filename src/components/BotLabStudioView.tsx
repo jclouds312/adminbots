@@ -36,7 +36,10 @@ import {
   HelpCircle,
   Eye,
   RefreshCw,
-  Send
+  Send,
+  UploadCloud,
+  FolderOpen,
+  HardDrive
 } from 'lucide-react';
 import { FranchiseBrand, BranchSede, MenuItem } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -88,6 +91,7 @@ export const BotLabStudioView: React.FC<BotLabStudioViewProps> = ({
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
+  const [isSyncingToDrive, setIsSyncingToDrive] = useState(false);
 
   // Modals state
   const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
@@ -431,6 +435,43 @@ export const BotLabStudioView: React.FC<BotLabStudioViewProps> = ({
     );
   };
 
+  // Handler: Sync Menu directly to Google Drive
+  const handleSyncMenuToDrive = async () => {
+    setIsSyncingToDrive(true);
+    try {
+      const res = await fetch('/api/drive/sync-menu-to-drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brand_id: selectedBrand.id,
+          brand_name: selectedBrand.name,
+          sede_id: selectedSede.sede_id,
+          sede_name: selectedSede.nombre_sede,
+          menu: selectedSede.menu,
+          botConfig: {
+            model: selectedSede.aiModel || 'gemini-2.5-flash',
+            tone: selectedSede.botTone || 'friendly_warm',
+            prompt: selectedSede.botCustomPrompt,
+            welcomeMessage: selectedSede.botWelcomeMessage
+          }
+        })
+      });
+
+      if (res.ok) {
+        onShowNotification(
+          language === 'es' ? '¡Menú Sincronizado en Google Drive!' : 'Menu Synced with Google Drive!',
+          language === 'es'
+            ? `Se exportó el catálogo de ${selectedSede.menu.length} platos de ${selectedBrand.name} a Google Drive con enlace permanente.`
+            : `Exported ${selectedSede.menu.length} dishes for ${selectedBrand.name} to Google Drive with permanent link.`
+        );
+      }
+    } catch (err) {
+      console.error('Error syncing menu to drive:', err);
+    } finally {
+      setIsSyncingToDrive(false);
+    }
+  };
+
   // Filter dishes
   const filteredDishes = selectedSede.menu.filter(dish => {
     const matchesSearch = !searchTerm || dish.name.toLowerCase().includes(searchTerm.toLowerCase()) || dish.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -684,6 +725,16 @@ export const BotLabStudioView: React.FC<BotLabStudioViewProps> = ({
                   </button>
                 ))}
               </div>
+
+              <button
+                onClick={handleSyncMenuToDrive}
+                disabled={isSyncingToDrive}
+                className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+                title="Sincronizar catálogo con Google Drive"
+              >
+                <UploadCloud className={`w-4 h-4 ${isSyncingToDrive ? 'animate-bounce' : ''}`} />
+                <span>{isSyncingToDrive ? (language === 'es' ? 'Sincronizando...' : 'Syncing...') : (language === 'es' ? 'Exportar a Drive' : 'Sync to Drive')}</span>
+              </button>
 
               <button
                 onClick={() => {

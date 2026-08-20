@@ -197,11 +197,11 @@ export const MobileQuickNav: React.FC<MobileQuickNavProps> = ({
         </div>
       </nav>
 
-      {/* Slide-Up Full Mobile Drawer / All Modules View */}
+      {/* Slide-Up Responsive Mobile & Tablet Drawer / All Modules View */}
       {isDrawerOpen && (
-        <div className="fixed inset-0 z-50 md:hidden bg-slate-950/80 backdrop-blur-md flex flex-col justify-end animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col justify-end md:justify-center md:items-center p-0 md:p-6 animate-in fade-in duration-200">
           <div 
-            className="w-full max-h-[85vh] bg-[#1E293B] border-t border-slate-700 rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-250 text-slate-100"
+            className="w-full md:max-w-2xl max-h-[88vh] md:max-h-[82vh] bg-[#1E293B] border-t md:border border-slate-700 rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-250 text-slate-100"
           >
             {/* Drawer Header */}
             <div className="p-4 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between sticky top-0 z-10">

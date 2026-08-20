@@ -124,3 +124,65 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.6);
 }
+
+/* Advanced Navigation Wrappers & Responsive Breakpoints */
+.nav-pill-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.375rem;
+  border-radius: 0.875rem;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.nav-micro-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3125rem 0.5625rem;
+  border-radius: 0.625rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1rem;
+  white-space: nowrap;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .nav-micro-btn {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.625rem;
+  }
+}
+
+.nav-micro-btn:hover {
+  transform: translateY(-0.5px);
+}
+
+.nav-micro-btn:active {
+  transform: translateY(0.5px) scale(0.98);
+}
+
+.nav-micro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.375rem;
+  border-radius: 9999px;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+@media (max-width: 1024px) {
+  .nav-hide-tablet-badge {
+    display: none;
+  }
+}

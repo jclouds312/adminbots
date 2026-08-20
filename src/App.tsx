@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { MobileQuickNav } from './components/MobileQuickNav';
 import { ChatBotView } from './components/ChatBotView';
@@ -35,6 +35,8 @@ import {
   OrderStatus 
 } from './types';
 import { CheckCircle2, Sparkles, X } from 'lucide-react';
+import { testFirebaseConnection } from './firebase';
+import { saveOrderToFirestore, saveBotToFirestore, saveBranchToFirestore } from './services/firebaseService';
 
 export const App: React.FC = () => {
   // State for brands and sedes
@@ -47,6 +49,11 @@ export const App: React.FC = () => {
   const [currentCurrency, setCurrentCurrency] = useState<'USD' | 'COP'>('USD');
   const [currentLanguage, setCurrentLanguage] = useState<'es' | 'en'>('es');
   const [googleUser, setGoogleUser] = useState<any>(null);
+
+  // Initialize Firebase connection on mount
+  useEffect(() => {
+    testFirebaseConnection().catch(console.warn);
+  }, []);
 
   // Notification Toast state
   const [notification, setNotification] = useState<{ message: string; title?: string } | null>(null);
@@ -141,6 +148,12 @@ export const App: React.FC = () => {
   // Handle new order created from chatbot
   const handleOrderCreated = (newOrder: Order) => {
     setOrders((prev) => [newOrder, ...prev]);
+    
+    // Save to Firestore seamlessly in background
+    saveOrderToFirestore(newOrder).catch((err) => {
+      console.warn('Firestore order sync:', err);
+    });
+
     setNotification({
       title: '¡Nueva Orden Recibida!',
       message: `Pedido #${newOrder.pedido_id} de ${newOrder.nombre_cliente} enviado a cocina.`
@@ -157,12 +170,14 @@ export const App: React.FC = () => {
             ...(o.historial_estados || []),
             { estado: newStatus, timestamp: new Date().toISOString() }
           ];
-          return {
+          const updatedOrder: Order = {
             ...o,
             estado: newStatus,
             updated_at: new Date().toISOString(),
             historial_estados: updatedHistory
           };
+          saveOrderToFirestore(updatedOrder).catch(console.warn);
+          return updatedOrder;
         }
         return o;
       })
@@ -175,71 +190,79 @@ export const App: React.FC = () => {
   };
 
   // Bot Creator Core Synchronization: Real-time provisioning
-  const handleDeployBot = (botData: any) => {
-    const newSedeId = `sede_${Date.now()}`;
-    const cleanCity = botData.cityState ? botData.cityState.split(',')[0].trim() : 'Miami';
-    const cleanState = botData.cityState ? botData.cityState.split(',')[1]?.trim() || 'FL' : 'FL';
+  const handleDeployBot = (botData: any, deployedBranch?: BranchSede, deployedBrand?: FranchiseBrand) => {
+    let newBranch: BranchSede;
+    let newBrand: FranchiseBrand;
 
-    const defaultMenu = [
-      {
-        id: 'm-01',
-        name: `Combo Especial ${botData.restaurantName}`,
-        category: 'Principales',
-        description: 'Plato insignia recién preparado con ingredientes premium y salsa especial de la casa.',
-        price: botData.currency === 'USD' ? 14.50 : 32000,
-        available: true,
-        image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&auto=format&fit=crop&q=80'
-      },
-      {
-        id: 'm-02',
-        name: 'Acompañamiento & Bebida Artesanal',
-        category: 'Bebidas & Extras',
-        description: 'Papas sazonadas o chips crocantes acompañados de bebida refrescante de frutas naturales.',
-        price: botData.currency === 'USD' ? 5.50 : 12000,
-        available: true,
-        image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=400&auto=format&fit=crop&q=80'
-      }
-    ];
+    if (deployedBranch && deployedBrand) {
+      newBranch = deployedBranch;
+      newBrand = deployedBrand;
+    } else {
+      const newSedeId = `sede_${Date.now()}`;
+      const cleanCity = botData.cityState ? botData.cityState.split(',')[0].trim() : 'Miami';
+      const cleanState = botData.cityState ? botData.cityState.split(',')[1]?.trim() || 'FL' : 'FL';
 
-    const newBranch: BranchSede = {
-      sede_id: newSedeId,
-      nombre_restaurante: botData.restaurantName,
-      nombre_sede: botData.cityState ? `${botData.restaurantName} (${cleanCity})` : `${botData.restaurantName} Sede Central`,
-      phone_number_id: botData.metaPhoneId || 'phone_9918239102',
-      telefono_whatsapp: botData.whatsappNumber || '+1 (305) 555-0199',
-      telefono_cocina_sede: '+1 (305) 555-0188',
-      direccion: `Av. Comercial Principal #400, ${cleanCity}, ${cleanState}`,
-      ciudad: cleanCity,
-      moneda: botData.currency || 'USD',
-      horario: '11:00 AM - 10:30 PM (Lunes a Domingo)',
-      tiempo_estimado_entrega: '25-35 min',
-      costo_domicilio: botData.currency === 'USD' ? 4.50 : 5000,
-      menu: defaultMenu
-    };
+      const defaultMenu = [
+        {
+          id: 'm-01',
+          name: `Combo Especial ${botData.restaurantName}`,
+          category: 'Principales',
+          description: 'Plato insignia recién preparado con ingredientes premium y salsa especial de la casa.',
+          price: botData.currency === 'USD' ? 14.50 : 32000,
+          available: true,
+          image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&auto=format&fit=crop&q=80'
+        },
+        {
+          id: 'm-02',
+          name: 'Acompañamiento & Bebida Artesanal',
+          category: 'Bebidas & Extras',
+          description: 'Papas sazonadas o chips crocantes acompañados de bebida refrescante de frutas naturales.',
+          price: botData.currency === 'USD' ? 5.50 : 12000,
+          available: true,
+          image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=400&auto=format&fit=crop&q=80'
+        }
+      ];
 
-    const newBrand: FranchiseBrand = {
-      id: `brand_${Date.now()}`,
-      name: botData.restaurantName,
-      ownerName: botData.clientOwner || 'Alejandro (Socio LATAM)',
-      brandCode: `BOT-${Math.floor(1000 + Math.random() * 9000)}`,
-      logoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80',
-      bannerUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
-      cuisineType: 'Burgers & Grill',
-      country: botData.currency === 'USD' ? 'USA' : 'Colombia',
-      currency: botData.currency || 'USD',
-      totalBranches: 1,
-      activeBotsCount: 1,
-      activeDeliveryPlatforms: ['whatsapp_direct'],
-      monthlyRevenueUsd: 0,
-      todayOrdersCount: 1,
-      customerRating: 4.9,
-      status: 'active',
-      contactEmail: 'contacto@restobot.latam',
-      contactPhone: botData.whatsappNumber || '+1 (305) 555-0199',
-      assignedManager: 'Alejandro Morales',
-      branches: [newBranch],
-      createdAt: new Date().toISOString().split('T')[0]
-    };
+      newBranch = {
+        sede_id: newSedeId,
+        nombre_restaurante: botData.restaurantName,
+        nombre_sede: botData.cityState ? `${botData.restaurantName} (${cleanCity})` : `${botData.restaurantName} Sede Central`,
+        phone_number_id: botData.metaPhoneId || 'phone_9918239102',
+        telefono_whatsapp: botData.whatsappNumber || '+1 (305) 555-0199',
+        telefono_cocina_sede: '+1 (305) 555-0188',
+        direccion: `Av. Comercial Principal #400, ${cleanCity}, ${cleanState}`,
+        ciudad: cleanCity,
+        moneda: botData.currency || 'USD',
+        horario: '11:00 AM - 10:30 PM (Lunes a Domingo)',
+        tiempo_estimado_entrega: '25-35 min',
+        costo_domicilio: botData.currency === 'USD' ? 4.50 : 5000,
+        menu: defaultMenu
+      };
+
+      newBrand = {
+        id: `brand_${Date.now()}`,
+        name: botData.restaurantName,
+        ownerName: botData.clientOwner || 'Alejandro (Socio LATAM)',
+        brandCode: `BOT-${Math.floor(1000 + Math.random() * 9000)}`,
+        logoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80',
+        bannerUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
+        cuisineType: 'Burgers & Grill',
+        country: botData.currency === 'USD' ? 'USA' : 'Colombia',
+        currency: botData.currency || 'USD',
+        totalBranches: 1,
+        activeBotsCount: 1,
+        activeDeliveryPlatforms: ['whatsapp_direct'],
+        monthlyRevenueUsd: 0,
+        todayOrdersCount: 1,
+        customerRating: 4.9,
+        status: 'active',
+        contactEmail: 'contacto@restobot.latam',
+        contactPhone: botData.whatsappNumber || '+1 (305) 555-0199',
+        assignedManager: 'Alejandro Morales',
+        branches: [newBranch],
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+    }
 
     // Synchronize global brands list, active brand, active sede, and currency
     setBrands((prev) => [newBrand, ...prev]);
@@ -253,7 +276,7 @@ export const App: React.FC = () => {
     const initialBotOrder: Order = {
       pedido_id: `${Math.floor(2000 + Math.random() * 8000)}`,
       reference: `PED-BOT-${Date.now().toString().slice(-4)}`,
-      sede_id: newSedeId,
+      sede_id: newBranch.sede_id,
       nombre_sede: newBranch.nombre_sede,
       telefono: '+1 (305) 555-4422',
       phone_number_id: newBranch.phone_number_id,
@@ -262,16 +285,16 @@ export const App: React.FC = () => {
       items: [
         { 
           producto_id: 'b-01', 
-          nombre: `Combo Inauguración ${botData.restaurantName}`, 
+          nombre: `Combo Inauguración ${newBrand.name}`, 
           cantidad: 1, 
-          precio_unitario: botData.currency === 'USD' ? 14.00 : 32000, 
-          subtotal: botData.currency === 'USD' ? 14.00 : 32000 
+          precio_unitario: (newBranch.moneda || 'USD') === 'USD' ? 14.00 : 32000, 
+          subtotal: (newBranch.moneda || 'USD') === 'USD' ? 14.00 : 32000 
         }
       ],
-      subtotal: botData.currency === 'USD' ? 14.00 : 32000,
+      subtotal: (newBranch.moneda || 'USD') === 'USD' ? 14.00 : 32000,
       costo_domicilio: newBranch.costo_domicilio,
-      total: botData.currency === 'USD' ? 18.50 : 37000,
-      moneda: botData.currency || 'USD',
+      total: (newBranch.moneda || 'USD') === 'USD' ? 18.50 : 37000,
+      moneda: newBranch.moneda || 'USD',
       estado: 'en_cocina',
       wompi_reference: `wompi_init_${Date.now()}`,
       link_pago: `https://checkout.wompi.co/l/demo_${Date.now()}`,
@@ -285,6 +308,7 @@ export const App: React.FC = () => {
     };
 
     setOrders((prev) => [initialBotOrder, ...prev]);
+    saveOrderToFirestore(initialBotOrder).catch(console.warn);
 
     // Show feedback toast
     setNotification({

@@ -1,27 +1,31 @@
 {
   "entities": {
-    "Order": {
-      "title": "Order",
-      "description": "Pedido de restaurante multicanal (WhatsApp, KDS, Delivery)",
+    "Bot": {
+      "title": "Bot",
+      "description": "Configuración y despliegue de bot de WhatsApp funcional para restaurantes",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "sede_id": { "type": "string" },
-        "cliente_nombre": { "type": "string" },
-        "cliente_telefono": { "type": "string" },
-        "direccion_entrega": { "type": "string" },
-        "estado": { "type": "string", "enum": ["creado", "esperando_pago", "pagado", "en_cocina", "listo_cocina", "en_camino", "entregado", "pago_rechazado", "cancelado"] },
-        "origen": { "type": "string", "enum": ["whatsapp_bot", "web_pwa", "rappi", "uber_eats", "didi_food", "doordash", "salon"] },
-        "metodo_pago": { "type": "string" },
-        "total": { "type": "number" },
-        "moneda": { "type": "string" },
-        "timestamp": { "type": "string" }
+        "botName": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "metaPhoneId": { "type": "string" },
+        "metaWabaId": { "type": "string" },
+        "sedeId": { "type": "string" },
+        "sedeName": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "deploying", "paused", "sandbox"] },
+        "systemPrompt": { "type": "string" },
+        "aiModel": { "type": "string" },
+        "temperature": { "type": "number" },
+        "currency": { "type": "string" },
+        "paymentGateway": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
       },
-      "required": ["id", "sede_id", "cliente_nombre", "estado", "total", "moneda"]
+      "required": ["id", "botName", "whatsappNumber", "status"]
     },
     "Branch": {
       "title": "Branch",
-      "description": "Sede o sucursal del restaurante en USA o LATAM",
+      "description": "Entidad y sede operativa del restaurante con geolocalización y menú",
       "type": "object",
       "properties": {
         "sede_id": { "type": "string" },
@@ -38,6 +42,38 @@
         "cobertura_km": { "type": "number" }
       },
       "required": ["sede_id", "nombre_sede", "ciudad", "moneda"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Pedido de restaurante multicanal (WhatsApp, KDS, Delivery)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "pedido_id": { "type": "string" },
+        "sede_id": { "type": "string" },
+        "nombre_cliente": { "type": "string" },
+        "telefono": { "type": "string" },
+        "direccion_entrega": { "type": "string" },
+        "estado": { "type": "string", "enum": ["creado", "esperando_pago", "pagado", "en_cocina", "listo_cocina", "en_camino", "entregado", "pago_rechazado", "cancelado", "anulado"] },
+        "total": { "type": "number" },
+        "moneda": { "type": "string" },
+        "created_at": { "type": "string" }
+      },
+      "required": ["id", "sede_id", "telefono", "estado", "total", "moneda"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Perfil de usuario administrativo y credenciales de acceso al panel",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["super_admin", "lead_devops", "branch_manager", "driver_fleet"] },
+        "defaultSedeId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email", "name", "role"]
     },
     "KardexItem": {
       "title": "KardexItem",
@@ -69,8 +105,6 @@
         "cliente_nombre": { "type": "string" },
         "subtotal": { "type": "number" },
         "impuesto": { "type": "number" },
-        "costo_domicilio": { "type": "number" },
-        "propina": { "type": "number" },
         "total": { "type": "number" },
         "moneda": { "type": "string" },
         "fecha": { "type": "string" }
@@ -87,7 +121,6 @@
         "phone": { "type": "string" },
         "email": { "type": "string" },
         "address": { "type": "string" },
-        "vip": { "type": "boolean" },
         "totalOrders": { "type": "number" },
         "totalSpent": { "type": "number" },
         "preferredBranch": { "type": "string" }
@@ -96,7 +129,7 @@
     },
     "AppSetting": {
       "title": "AppSetting",
-      "description": "Configuraciones persistentes e integraciones API del sistema",
+      "description": "Configuraciones persistentes e integraciones API del sistema (Wompi, Stripe, Meta WABA, Drive)",
       "type": "object",
       "properties": {
         "key": { "type": "string" },
@@ -107,13 +140,21 @@
     }
   },
   "firestore": {
+    "/bots/{botId}": {
+      "schema": { "$ref": "#/entities/Bot" },
+      "description": "Colección de bots desplegados y funcionales por número de WhatsApp"
+    },
+    "/branches/{branchId}": {
+      "schema": { "$ref": "#/entities/Branch" },
+      "description": "Colección de sedes operativas en USA y LATAM con sus menús y coordenadas"
+    },
     "/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
       "description": "Colección de pedidos en tiempo real para KDS y WhatsApp"
     },
-    "/branches/{branchId}": {
-      "schema": { "$ref": "#/entities/Branch" },
-      "description": "Colección de sedes operativas en USA y LATAM"
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Usuarios y administradores del panel de control"
     },
     "/kardex_items/{kardexId}": {
       "schema": { "$ref": "#/entities/KardexItem" },

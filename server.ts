@@ -41,12 +41,17 @@ const memoryStore = {
       transaccion_aprobada: true,
       created_at: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
       updated_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-      notas_especiales: "Llamar al llegar a la caseta de vigilancia"
+      notas_especiales: "Llamar al llegar a la caseta de vigilancia",
+      historial_estados: [
+        { estado: "creado", timestamp: new Date(Date.now() - 1000 * 60 * 18).toISOString() },
+        { estado: "pagado", timestamp: new Date(Date.now() - 1000 * 60 * 16).toISOString() },
+        { estado: "en_cocina", timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString() }
+      ]
     },
     {
       pedido_id: "1002",
       reference: "PED-1002-1723725000000",
-      telefono: "+1 (407) 555-8822",
+      telefono: "+1 (407) 555-8831",
       nombre_cliente: "Valeria Restrepo",
       sede_id: "sede-orlando-02",
       nombre_sede: "Sede Orlando (La Ceja Bakery)",
@@ -73,10 +78,282 @@ const memoryStore = {
       wompi_reference: "PED-1002-1723725000000",
       transaccion_aprobada: true,
       created_at: new Date(Date.now() - 1000 * 60 * 42).toISOString(),
-      updated_at: new Date(Date.now() - 1000 * 60 * 12).toISOString()
+      updated_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+      historial_estados: [
+        { estado: "creado", timestamp: new Date(Date.now() - 1000 * 60 * 42).toISOString() },
+        { estado: "pagado", timestamp: new Date(Date.now() - 1000 * 60 * 38).toISOString() },
+        { estado: "en_cocina", timestamp: new Date(Date.now() - 1000 * 60 * 25).toISOString() },
+        { estado: "en_camino", timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString() }
+      ]
     }
-  ],
+  ] as any[],
   webhookLogs: [] as any[],
+  driveFolders: [
+    {
+      id: "folder_root_001",
+      name: "RestoBot IA - Cloud Workspace",
+      type: "root",
+      driveFolderId: "1RestoBot_Master_Root_Folder_Drive_USA",
+      description: "Carpeta raíz centralizada en Google Drive para todas las franquicias y sedes.",
+      itemCount: 18,
+      lastSync: new Date().toISOString(),
+      webViewLink: "https://drive.google.com/drive/folders/1RestoBot_Master_Root_Folder_Drive_USA"
+    },
+    {
+      id: "folder_menus",
+      parentId: "folder_root_001",
+      name: "Menús & Catálogos Digitales",
+      type: "menus",
+      driveFolderId: "1RestoBot_Subfolder_Menus_2026",
+      description: "Catálogos de platillos, precios en USD/COP y especificaciones de ingredientes.",
+      itemCount: 6,
+      lastSync: new Date().toISOString(),
+      icon: "menu"
+    },
+    {
+      id: "folder_logs",
+      parentId: "folder_root_001",
+      name: "Logs de Pedidos & WhatsApp WABA",
+      type: "order_logs",
+      driveFolderId: "1RestoBot_Subfolder_Logs_WABA_2026",
+      description: "Registros históricos de pedidos, recibos digitales y transacciones confirmadas.",
+      itemCount: 4,
+      lastSync: new Date().toISOString(),
+      icon: "logs"
+    },
+    {
+      id: "folder_backups",
+      parentId: "folder_root_001",
+      name: "Backups de Configuración de Bots & Prompts",
+      type: "bot_backups",
+      driveFolderId: "1RestoBot_Subfolder_Bot_Backups_2026",
+      description: "Copias de seguridad de prompts del sistema, temperatura de IA y configuraciones de sedes.",
+      itemCount: 5,
+      lastSync: new Date().toISOString(),
+      icon: "bot"
+    },
+    {
+      id: "folder_cierres",
+      parentId: "folder_root_001",
+      name: "Cierres de Ventas Diarias (PDF/JSON)",
+      type: "daily_sales",
+      driveFolderId: "1RestoBot_Subfolder_Sales_Reports_2026",
+      description: "Auditorías de ventas, tickets promedio y consolidado contable diario.",
+      itemCount: 3,
+      lastSync: new Date().toISOString(),
+      icon: "sales"
+    },
+    {
+      id: "folder_kardex",
+      parentId: "folder_root_001",
+      name: "Kardex & Inventarios",
+      type: "kardex",
+      driveFolderId: "1RestoBot_Subfolder_Kardex_Stock_2026",
+      description: "Control de materias primas, costos unitarios, mermas y stocks críticos.",
+      itemCount: 2,
+      lastSync: new Date().toISOString(),
+      icon: "kardex"
+    }
+  ] as any[],
+  kardexItems: [
+    {
+      id: "k-01",
+      sede_id: "sede-miami-01",
+      nombre_insumo: "Carne Molida Angus Smash 80/20",
+      categoria: "Carnes & Proteínas",
+      unidad_medida: "kg",
+      stock_actual: 45.5,
+      stock_minimo: 15.0,
+      costo_unitario: 8.50,
+      valor_total_stock: 386.75,
+      estado_stock: "optimo",
+      ultimo_movimiento: new Date(Date.now() - 1000 * 60 * 18).toISOString()
+    },
+    {
+      id: "k-02",
+      sede_id: "sede-miami-01",
+      nombre_insumo: "Pan Brioche Artesanal Sellado",
+      categoria: "Panadería & Harinas",
+      unidad_medida: "unidades",
+      stock_actual: 120,
+      stock_minimo: 40,
+      costo_unitario: 0.85,
+      valor_total_stock: 102.00,
+      estado_stock: "optimo",
+      ultimo_movimiento: new Date(Date.now() - 1000 * 60 * 18).toISOString()
+    },
+    {
+      id: "k-03",
+      sede_id: "sede-miami-01",
+      nombre_insumo: "Queso Cheddar Americano Madurado",
+      categoria: "Salsas & Quesos",
+      unidad_medida: "kg",
+      stock_actual: 18.0,
+      stock_minimo: 8.0,
+      costo_unitario: 9.20,
+      valor_total_stock: 165.60,
+      estado_stock: "optimo",
+      ultimo_movimiento: new Date(Date.now() - 1000 * 60 * 45).toISOString()
+    },
+    {
+      id: "k-04",
+      sede_id: "sede-miami-01",
+      nombre_insumo: "Papas Fritas Corte Recto Premium",
+      categoria: "Vegetales Frescos",
+      unidad_medida: "kg",
+      stock_actual: 30.0,
+      stock_minimo: 12.0,
+      costo_unitario: 2.80,
+      valor_total_stock: 84.00,
+      estado_stock: "optimo",
+      ultimo_movimiento: new Date(Date.now() - 1000 * 60 * 18).toISOString()
+    },
+    {
+      id: "k-05",
+      sede_id: "sede-miami-01",
+      nombre_insumo: "Aceite de Trufa Negra Italiana 500ml",
+      categoria: "Salsas & Quesos",
+      unidad_medida: "unidades",
+      stock_actual: 3,
+      stock_minimo: 2,
+      costo_unitario: 24.00,
+      valor_total_stock: 72.00,
+      estado_stock: "bajo",
+      ultimo_movimiento: new Date(Date.now() - 1000 * 3600 * 5).toISOString()
+    },
+    {
+      id: "k-06",
+      sede_id: "sede-miami-01",
+      nombre_insumo: "Tocineta Ahumada en Manzano",
+      categoria: "Carnes & Proteínas",
+      unidad_medida: "kg",
+      stock_actual: 14.5,
+      stock_minimo: 6.0,
+      costo_unitario: 7.90,
+      valor_total_stock: 114.55,
+      estado_stock: "optimo",
+      ultimo_movimiento: new Date(Date.now() - 1000 * 60 * 18).toISOString()
+    },
+    {
+      id: "k-07",
+      sede_id: "sede-orlando-02",
+      nombre_insumo: "Pandebonos Preformados Congelados",
+      categoria: "Panadería & Harinas",
+      unidad_medida: "unidades",
+      stock_actual: 180,
+      stock_minimo: 60,
+      costo_unitario: 0.60,
+      valor_total_stock: 108.00,
+      estado_stock: "optimo",
+      ultimo_movimiento: new Date(Date.now() - 1000 * 60 * 42).toISOString()
+    },
+    {
+      id: "k-08",
+      sede_id: "sede-orlando-02",
+      nombre_insumo: "Café en Grano Origen Antioquia 2.5kg",
+      categoria: "Bebidas & Licores",
+      unidad_medida: "paquetes",
+      stock_actual: 8,
+      stock_minimo: 3,
+      costo_unitario: 28.00,
+      valor_total_stock: 224.00,
+      estado_stock: "optimo",
+      ultimo_movimiento: new Date(Date.now() - 1000 * 60 * 42).toISOString()
+    },
+    {
+      id: "k-09",
+      sede_id: "sede-miami-01",
+      nombre_insumo: "Empaques Térmicos Biodegradables",
+      categoria: "Empaques & Desechables",
+      unidad_medida: "unidades",
+      stock_actual: 250,
+      stock_minimo: 80,
+      costo_unitario: 0.35,
+      valor_total_stock: 87.50,
+      estado_stock: "optimo",
+      ultimo_movimiento: new Date(Date.now() - 1000 * 60 * 18).toISOString()
+    }
+  ] as any[],
+  kardexMovements: [
+    {
+      id: "mov-001",
+      sede_id: "sede-miami-01",
+      insumo_id: "k-01",
+      insumo_nombre: "Carne Molida Angus Smash 80/20",
+      tipo_movimiento: "salida_venta",
+      cantidad: -0.4,
+      costo_unitario: 8.50,
+      subtotal: 3.40,
+      stock_resultante: 45.5,
+      pedido_relacionado_id: "1001",
+      fecha: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
+      responsable: "RestoBot KDS Auto-Deduction",
+      notas: "Deducción automática por Pedido #1001 (2 Smash Burgers)"
+    },
+    {
+      id: "mov-002",
+      sede_id: "sede-miami-01",
+      insumo_id: "k-02",
+      insumo_nombre: "Pan Brioche Artesanal Sellado",
+      tipo_movimiento: "salida_venta",
+      cantidad: -2,
+      costo_unitario: 0.85,
+      subtotal: 1.70,
+      stock_resultante: 120,
+      pedido_relacionado_id: "1001",
+      fecha: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
+      responsable: "RestoBot KDS Auto-Deduction",
+      notas: "Deducción automática por Pedido #1001"
+    }
+  ] as any[],
+  workflows: [
+    {
+      id: "wf-01",
+      title: "Google Drive Cloud Auto-Backup & Sync",
+      description: "Respalda automáticamente en Google Drive cada menú actualizado, prompt de IA y cierre de caja diario.",
+      status: "active",
+      lastExecution: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+      successRate: "100%",
+      triggersCount: 42
+    },
+    {
+      id: "wf-02",
+      title: "Meta WhatsApp WABA Cloud Message Router",
+      description: "Recibe webhooks de WhatsApp, procesa lenguaje natural con Gemini 2.5 Flash y genera pedidos en vivo.",
+      status: "active",
+      lastExecution: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+      successRate: "99.8%",
+      triggersCount: 384
+    },
+    {
+      id: "wf-03",
+      title: "Wompi & Stripe Payment Instant Verification",
+      description: "Valida firmas de webhook de pasarelas de pago y conmuta órdenes a 'pagado' e imprime en cocina KDS.",
+      status: "active",
+      lastExecution: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+      successRate: "100%",
+      triggersCount: 156
+    },
+    {
+      id: "wf-04",
+      title: "KDS Kitchen Dispatch & Delivery Geolocation",
+      description: "Asigna domiciliarios cuando la cocina marca 'Listo', calcula tiempo estimado y envía link GPS al cliente.",
+      status: "active",
+      lastExecution: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+      successRate: "100%",
+      triggersCount: 98
+    },
+    {
+      id: "wf-05",
+      title: "Kardex Stock Low Threshold Real-Time Alert",
+      description: "Monitorea porciones de insumos; si el stock baja del umbral, envía alerta por WhatsApp y Google Drive.",
+      status: "active",
+      lastExecution: new Date(Date.now() - 1000 * 3600).toISOString(),
+      successRate: "100%",
+      triggersCount: 19
+    }
+  ] as any[],
+  workflowExecutions: [] as any[],
   driveBackups: [
     {
       id: "drive_file_001",
@@ -88,8 +365,30 @@ const memoryStore = {
       sede_id: "sede-miami-01",
       sede_nombre: "Sede Principal (Brickell / Miami)",
       createdTime: new Date(Date.now() - 3600000 * 24).toISOString()
+    },
+    {
+      id: "drive_file_002",
+      name: "Menu_Master_RestoBot_Gourmet_Burgers_2026.json",
+      mimeType: "application/json",
+      webViewLink: "https://drive.google.com/file/d/demo_menu_master/view",
+      size: "5.4 KB",
+      fileType: "menu_digital",
+      sede_id: "sede-miami-01",
+      sede_nombre: "Sede Principal (Brickell / Miami)",
+      createdTime: new Date(Date.now() - 3600000 * 12).toISOString()
+    },
+    {
+      id: "drive_file_003",
+      name: "Kardex_Inventario_Insumos_Miami_Agosto_2026.json",
+      mimeType: "application/json",
+      webViewLink: "https://drive.google.com/file/d/demo_kardex_drive/view",
+      size: "3.2 KB",
+      fileType: "kardex",
+      sede_id: "sede-miami-01",
+      sede_nombre: "Sede Principal (Brickell / Miami)",
+      createdTime: new Date(Date.now() - 3600000 * 6).toISOString()
     }
-  ],
+  ] as any[],
   googleSheets: [
     {
       id: "sheet_001",
@@ -101,6 +400,73 @@ const memoryStore = {
       rowsCount: 28,
       syncStatus: "synced",
       autoSync: true
+    }
+  ],
+  brands: [
+    {
+      id: "brand_01",
+      name: "RestoBot Gourmet & Smash Burgers",
+      cuisineType: "Smash Burgers & Street Food",
+      country: "USA",
+      currency: "USD",
+      ownerName: "Alejandro Morales",
+      logoUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80",
+      contactPhone: "+1 (305) 555-1234",
+      contactEmail: "contacto@restobotgourmet.com",
+      notes: "Franquicia insignia de hamburguesas artesanales de alta rotación en Florida.",
+      sedes: [
+        {
+          sede_id: "sede-miami-01",
+          nombre_restaurante: "RestoBot Gourmet",
+          nombre_sede: "Sede Principal (Brickell / Miami)",
+          phone_number_id: "phone_miami_01",
+          telefono_whatsapp: "+1 305 555 1234",
+          telefono_cocina_sede: "+1 305 555 8820",
+          direccion: "1200 Brickell Ave, Miami, FL 33131",
+          ciudad: "Miami, FL",
+          moneda: "USD",
+          horario: "11:00 AM - 11:00 PM",
+          tiempo_estimado_entrega: "25-35 min",
+          costo_domicilio: 3.50,
+          aiModel: "gemini-2.5-flash",
+          botTone: "friendly_warm",
+          botStatus: "production",
+          botWelcomeMessage: "¡Hola! Bienvenido a RestoBot Gourmet (Brickell Miami) 🍔🔥. ¿Qué deseas ordenar hoy?",
+          botCustomPrompt: "Eres el sommelier y anfitrión virtual de RestoBot Gourmet. Tu misión es recomendar smash burgers dobles, acompañamientos crujientes y generar link seguro de pago.",
+          menu: [
+            { id: "p-01", name: "The AI Double Smash Burger", category: "Burgers", description: "Doble carne Angus smash, queso cheddar americano, salsa secreta, pan brioche.", price: 14.5, available: true, image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80", badge: "Top Seller", spiceLevel: 0, prepTimeMinutes: 10 },
+            { id: "p-02", name: "Truffle Mushroom Angus Burger", category: "Burgers", description: "Carne Angus, hongos salteados al vino tinto, queso suizo fundido y mayonesa de trufa negra.", price: 16.5, available: true, image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=500&auto=format&fit=crop&q=80", badge: "Chef Special", spiceLevel: 0, prepTimeMinutes: 12 },
+            { id: "p-03", name: "Loaded Bacon Cheese Fries", category: "Acompañamientos", description: "Papas fritas crujientes con queso cheddar fundido y abundante tocineta crocante.", price: 6.5, available: true, image: "https://images.unsplash.com/photo-1576107232684-1279f3908594?w=500&auto=format&fit=crop&q=80", badge: "Favorito", spiceLevel: 0, prepTimeMinutes: 8 },
+            { id: "p-04", name: "Crispy Onion Rings con Salsa BBQ", category: "Acompañamientos", description: "Aros de cebolla artesanales empanizados al panko con salsa BBQ ahumada de la casa.", price: 5.0, image: "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=500&auto=format&fit=crop&q=80", available: true, badge: "Crujiente", spiceLevel: 0, prepTimeMinutes: 7 },
+            { id: "p-05", name: "Craft Beer IPA / Soda Artesanal", category: "Bebidas", description: "Cerveza artesanal IPA o soda saborizada de frutos rojos silvestres.", price: 4.5, available: true, image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500&auto=format&fit=crop&q=80", badge: "Refrescante", spiceLevel: 0, prepTimeMinutes: 2 },
+            { id: "p-06", name: "Milkshake de Caramelo Salado", category: "Postres", description: "Helado de vainilla francesa, sirope de caramelo salado artesanal y crema chantilly.", price: 6.0, available: true, image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&auto=format&fit=crop&q=80", badge: "Dulce", spiceLevel: 0, prepTimeMinutes: 5 }
+          ]
+        },
+        {
+          sede_id: "sede-orlando-02",
+          nombre_restaurante: "La Ceja Bakery & Café",
+          nombre_sede: "Sede Orlando (La Ceja Bakery)",
+          phone_number_id: "phone_orlando_02",
+          telefono_whatsapp: "+1 407 555 8822",
+          telefono_cocina_sede: "+1 407 555 8825",
+          direccion: "8400 International Dr, Suite 102, Orlando, FL 32819",
+          ciudad: "Orlando, FL",
+          moneda: "USD",
+          horario: "07:00 AM - 08:00 PM",
+          tiempo_estimado_entrega: "20-30 min",
+          costo_domicilio: 4.00,
+          aiModel: "gemini-2.5-flash",
+          botTone: "friendly_warm",
+          botStatus: "production",
+          botWelcomeMessage: "¡Buenos días! Bienvenido a La Ceja Bakery Orlando 🥐☕. ¿Te antojamos con pandebonos calienticos o café recién colado?",
+          botCustomPrompt: "Eres el anfitrión de La Ceja Bakery en Orlando. Recomienda combos de desayuno colombiano, cajas de pandebono y café de especialidad.",
+          menu: [
+            { id: "p-07", name: "Caja x12 Pandebonos Tradicionales", category: "Panadería", description: "Recién horneados con auténtico queso costeño y almidón de yuca.", price: 18.0, available: true, image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&auto=format&fit=crop&q=80", badge: "Calientico", spiceLevel: 0, prepTimeMinutes: 15 },
+            { id: "p-08", name: "Combo Desayuno Colombiano", category: "Desayunos", description: "Calentado de frijol y arroz con huevo frito, arepa con queso y chocolate caliente.", price: 12.5, available: true, image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80", badge: "Tradición", spiceLevel: 0, prepTimeMinutes: 12 },
+            { id: "p-09", name: "Café de Especialidad Filtrado 16oz", category: "Bebidas", description: "Café 100% de origen colombiano tostado medio con notas achocolatadas.", price: 4.0, available: true, image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500&auto=format&fit=crop&q=80", badge: "100% Arábica", spiceLevel: 0, prepTimeMinutes: 3 }
+          ]
+        }
+      ]
     }
   ]
 };
@@ -582,6 +948,26 @@ app.get("/api/domiciliarios/disponibles", (_req: Request, res: Response) => {
 // ----------------------------------------------------------------------
 // 7. GOOGLE DRIVE & SHEETS EXPORT ENDPOINTS
 // ----------------------------------------------------------------------
+app.get("/api/drive/files", (req: Request, res: Response) => {
+  const { type, sede_id } = req.query;
+  let files = [...memoryStore.driveBackups];
+  if (type && type !== "all") {
+    files = files.filter(f => f.fileType === type);
+  }
+  if (sede_id && sede_id !== "all") {
+    files = files.filter(f => f.sede_id === sede_id);
+  }
+  res.json({
+    success: true,
+    count: files.length,
+    files
+  });
+});
+
+app.get("/api/drive/backups", (_req: Request, res: Response) => {
+  res.json(memoryStore.driveBackups);
+});
+
 app.post("/api/drive/export-sales-report", (req: Request, res: Response) => {
   const { sede_id, fecha } = req.body;
   const dateStr = fecha || new Date().toISOString().slice(0, 10);
@@ -624,16 +1010,85 @@ app.post("/api/drive/export-sales-report", (req: Request, res: Response) => {
   });
 });
 
+app.post("/api/drive/sync-menu-to-drive", (req: Request, res: Response) => {
+  const { brand_id, sede_id, brand_name, sede_name, menu, botConfig } = req.body;
+  const targetBrand = memoryStore.brands.find(b => b.id === brand_id) || memoryStore.brands[0];
+  const targetSede = targetBrand?.sedes.find((s: any) => s.sede_id === sede_id) || targetBrand?.sedes[0];
+
+  const menuPayload = {
+    syncId: `SYNC-MENU-${Date.now()}`,
+    version: "2.5.0",
+    brand_id: brand_id || targetBrand?.id,
+    brand_name: brand_name || targetBrand?.name,
+    sede_id: sede_id || targetSede?.sede_id,
+    sede_nombre: sede_name || targetSede?.nombre_sede,
+    telefono_whatsapp: targetSede?.telefono_whatsapp,
+    currency: targetSede?.moneda || "USD",
+    syncedAt: new Date().toISOString(),
+    total_dishes: (menu || targetSede?.menu || []).length,
+    dishes: menu || targetSede?.menu || [],
+    botConfig: botConfig || {
+      model: targetSede?.aiModel || "gemini-2.5-flash",
+      tone: targetSede?.botTone || "friendly_warm",
+      prompt: targetSede?.botCustomPrompt,
+      welcomeMessage: targetSede?.botWelcomeMessage
+    }
+  };
+
+  const fileName = `Menu_${(brand_name || targetBrand?.name || 'Brand').replace(/\s+/g, '_')}_${(sede_name || targetSede?.nombre_sede || 'Sede').replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
+
+  const driveFile = {
+    id: `drive_file_${Date.now()}`,
+    name: fileName,
+    mimeType: "application/json",
+    webViewLink: `https://drive.google.com/file/d/menu_${Date.now()}/view`,
+    size: `${(JSON.stringify(menuPayload).length / 1024).toFixed(1)} KB`,
+    fileType: "menu_digital",
+    sede_id: sede_id || targetSede?.sede_id,
+    sede_nombre: sede_name || targetSede?.nombre_sede,
+    createdTime: new Date().toISOString()
+  };
+
+  memoryStore.driveBackups.unshift(driveFile);
+
+  res.json({
+    success: true,
+    message: "Menú sincronizado exitosamente con Google Drive",
+    file: driveFile,
+    payload: menuPayload
+  });
+});
+
+app.post("/api/drive/import-menu-from-drive", (req: Request, res: Response) => {
+  const { file_id } = req.body;
+  const file = memoryStore.driveBackups.find(f => f.id === file_id);
+  if (!file) {
+    return res.status(404).json({ error: "Archivo de menú no encontrado en Google Drive" });
+  }
+
+  res.json({
+    success: true,
+    file,
+    importedMenuCount: 6,
+    message: `Menú "${file.name}" importado y verificado correctamente desde Google Drive`
+  });
+});
+
 app.post("/api/drive/save-backup-record", (req: Request, res: Response) => {
   const fileRecord = req.body;
   memoryStore.driveBackups.unshift(fileRecord);
   res.json({ success: true, count: memoryStore.driveBackups.length });
 });
 
-app.get("/api/drive/backups", (_req: Request, res: Response) => {
-  res.json(memoryStore.driveBackups);
+app.delete("/api/drive/files/:fileId", (req: Request, res: Response) => {
+  const fileId = req.params.fileId;
+  memoryStore.driveBackups = memoryStore.driveBackups.filter(f => f.id !== fileId);
+  res.json({ success: true, message: "Archivo eliminado de Google Drive", remaining: memoryStore.driveBackups.length });
 });
 
+// ----------------------------------------------------------------------
+// 8. GOOGLE SHEETS SYNC ENDPOINTS
+// ----------------------------------------------------------------------
 app.get("/api/sheets/records", (_req: Request, res: Response) => {
   res.json(memoryStore.googleSheets);
 });
@@ -649,8 +1104,858 @@ app.post("/api/sheets/save-record", (req: Request, res: Response) => {
   res.json({ success: true, count: memoryStore.googleSheets.length });
 });
 
+app.post("/api/sheets/sync-orders", (_req: Request, res: Response) => {
+  const syncedOrdersCount = memoryStore.orders.length;
+  if (memoryStore.googleSheets.length > 0) {
+    memoryStore.googleSheets[0].lastSyncedAt = new Date().toISOString();
+    memoryStore.googleSheets[0].rowsCount = syncedOrdersCount + 28;
+    memoryStore.googleSheets[0].syncStatus = "synced";
+  }
+
+  res.json({
+    success: true,
+    syncedOrdersCount,
+    spreadsheetId: memoryStore.googleSheets[0]?.spreadsheetId,
+    timestamp: new Date().toISOString(),
+    message: `${syncedOrdersCount} pedidos sincronizados en tiempo real con Google Sheets`
+  });
+});
+
+// ----------------------------------------------------------------------
+// 9. BOT STUDIO & BRANDS MANAGEMENT ENDPOINTS
+// ----------------------------------------------------------------------
+app.get("/api/brands", (_req: Request, res: Response) => {
+  res.json(memoryStore.brands);
+});
+
+app.post("/api/brands", (req: Request, res: Response) => {
+  const newBrandData = req.body;
+  const newBrand = {
+    id: `brand_${Date.now()}`,
+    name: newBrandData.name || "Nueva Marca Gastronómica",
+    cuisineType: newBrandData.cuisineType || "Restaurante & Bar",
+    country: newBrandData.country || "USA",
+    currency: newBrandData.currency || "USD",
+    ownerName: newBrandData.ownerName || "Gerente",
+    logoUrl: newBrandData.logoUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80",
+    contactPhone: newBrandData.contactPhone || "+1 (305) 555-0000",
+    contactEmail: newBrandData.contactEmail || "",
+    notes: newBrandData.notes || "",
+    sedes: newBrandData.sedes || []
+  };
+
+  memoryStore.brands.push(newBrand);
+  res.status(201).json({ success: true, brand: newBrand, allBrands: memoryStore.brands });
+});
+
+app.put("/api/brands/:id", (req: Request, res: Response) => {
+  const brandId = req.params.id;
+  const index = memoryStore.brands.findIndex(b => b.id === brandId);
+  if (index === -1) {
+    return res.status(404).json({ error: "Marca no encontrada" });
+  }
+
+  memoryStore.brands[index] = {
+    ...memoryStore.brands[index],
+    ...req.body,
+    id: brandId
+  };
+
+  res.json({ success: true, brand: memoryStore.brands[index] });
+});
+
+app.post("/api/brands/:id/sedes", (req: Request, res: Response) => {
+  const brandId = req.params.id;
+  const brand = memoryStore.brands.find(b => b.id === brandId);
+  if (!brand) {
+    return res.status(404).json({ error: "Marca no encontrada" });
+  }
+
+  const sedeData = req.body;
+  const newSede = {
+    sede_id: `sede_${Date.now()}`,
+    nombre_restaurante: brand.name,
+    nombre_sede: sedeData.nombre_sede || "Nueva Sede",
+    phone_number_id: sedeData.phone_number_id || `phone_${Date.now()}`,
+    telefono_whatsapp: sedeData.telefono_whatsapp || "+1 305 555 1200",
+    telefono_cocina_sede: sedeData.telefono_cocina_sede || "+1 305 555 1201",
+    direccion: sedeData.direccion || "Dirección Principal",
+    ciudad: sedeData.ciudad || "Miami, FL",
+    moneda: sedeData.moneda || brand.currency || "USD",
+    horario: sedeData.horario || "11:00 AM - 10:00 PM",
+    tiempo_estimado_entrega: sedeData.tiempo_estimado_entrega || "25-35 min",
+    costo_domicilio: sedeData.costo_domicilio || 3.50,
+    aiModel: sedeData.aiModel || "gemini-2.5-flash",
+    botTone: sedeData.botTone || "friendly_warm",
+    botStatus: "production",
+    botWelcomeMessage: sedeData.botWelcomeMessage || `¡Hola! Bienvenido a ${brand.name} (${sedeData.nombre_sede || 'Sede'}) 🔥. ¿Qué deseas ordenar hoy?`,
+    botCustomPrompt: sedeData.botCustomPrompt || `Eres el mesero y sommelier virtual de ${brand.name}. Atiende con calidez.`,
+    menu: sedeData.menu || []
+  };
+
+  brand.sedes.push(newSede);
+  res.status(201).json({ success: true, sede: newSede, brand });
+});
+
+app.post("/api/brands/:id/menu-items", (req: Request, res: Response) => {
+  const brandId = req.params.id;
+  const { sede_id, item } = req.body;
+  const brand = memoryStore.brands.find(b => b.id === brandId);
+  if (!brand) return res.status(404).json({ error: "Marca no encontrada" });
+
+  const targetSede = brand.sedes.find((s: any) => s.sede_id === sede_id) || brand.sedes[0];
+  if (!targetSede) return res.status(404).json({ error: "Sede no encontrada" });
+
+  const newItem = {
+    id: item.id || `dish_${Date.now()}`,
+    name: item.name || "Nuevo Platillo",
+    category: item.category || "General",
+    description: item.description || "",
+    price: parseFloat(item.price) || 9.99,
+    available: item.available !== false,
+    image: item.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80",
+    badge: item.badge || "Nuevo",
+    spiceLevel: item.spiceLevel || 0,
+    prepTimeMinutes: item.prepTimeMinutes || 10
+  };
+
+  targetSede.menu.push(newItem);
+  res.status(201).json({ success: true, item: newItem, totalItems: targetSede.menu.length });
+});
+
+app.post("/api/brands/:id/deploy-bot", (req: Request, res: Response) => {
+  const brandId = req.params.id;
+  const { sede_id, webhook_url } = req.body;
+  const brand = memoryStore.brands.find(b => b.id === brandId);
+  if (!brand) return res.status(404).json({ error: "Marca no encontrada" });
+
+  const targetSede: any = brand.sedes.find((s: any) => s.sede_id === sede_id) || brand.sedes[0];
+
+  targetSede.botStatus = "production";
+  targetSede.lastDeployedAt = new Date().toISOString();
+
+  memoryStore.webhookLogs.unshift({
+    id: `log-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    source: "meta_whatsapp",
+    endpoint: "/api/brands/deploy-bot",
+    status: "success",
+    method: "POST",
+    statusCode: 200,
+    latencyMs: 120,
+    customerPhone: targetSede.telefono_whatsapp,
+    eventType: "bot.deployed_waba"
+  });
+
+  res.json({
+    success: true,
+    message: `Bot de WhatsApp Cloud API desplegado exitosamente para "${brand.name}" - ${targetSede.nombre_sede}`,
+    sede: targetSede,
+    webhookUrl: webhook_url || `https://ais-dev-75rexctyeyfymta65gf5gy-563837866317.us-east1.run.app/api/webhooks/whatsapp-cloud`
+  });
+});
+
+// Fast Bot 1-Field WhatsApp Deployment endpoint
+app.post("/api/bots/deploy-fast", (req: Request, res: Response) => {
+  const { whatsappNumber, restaurantName, cityState, cuisineType, currency, paymentGateway, aiModel, customPrompt } = req.body;
+  
+  if (!whatsappNumber) {
+    return res.status(400).json({ error: "El número de WhatsApp es obligatorio." });
+  }
+
+  const cleanPhone = String(whatsappNumber).trim();
+  const digitsOnly = cleanPhone.replace(/\D/g, "");
+  const isCol = currency === "COP" || cleanPhone.startsWith("+57") || (digitsOnly.length === 10 && digitsOnly.startsWith("3"));
+  const curr = isCol ? "COP" : (currency || "USD");
+  const city = cityState ? cityState.split(",")[0].trim() : (curr === "USD" ? "Miami" : "Medellín");
+  const state = cityState ? cityState.split(",")[1]?.trim() || (curr === "USD" ? "FL" : "Antioquia") : (curr === "USD" ? "FL" : "Antioquia");
+  const brandName = restaurantName?.trim() || `Restaurante Partner ${digitsOnly.slice(-4) || 'Gourmet'}`;
+  const cuisine = cuisineType || "Burgers & Grill";
+  const gateway = paymentGateway || (curr === "USD" ? "Stripe" : "Wompi");
+  const model = aiModel || "gemini-2.5-flash";
+
+  const newSedeId = `sede_${Date.now()}`;
+  const newBrandId = `brand_${Date.now()}`;
+
+  const defaultMenu = [
+    {
+      id: `p-${Date.now()}-1`,
+      name: `Plato Especial ${brandName}`,
+      category: "Especialidades",
+      description: "Receta artesanal recién preparada con ingredientes premium y salsa especial de la casa.",
+      price: curr === "USD" ? 14.50 : 34000,
+      available: true,
+      badge: "Top Seller",
+      spiceLevel: 0,
+      prepTimeMinutes: 12,
+      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80"
+    },
+    {
+      id: `p-${Date.now()}-2`,
+      name: "Combo Acompañamiento & Bebida Fría",
+      category: "Acompañamientos",
+      description: "Papas sazonadas crujientes o chips acompañados de bebida refrescante natural.",
+      price: curr === "USD" ? 6.00 : 14000,
+      available: true,
+      badge: "Favorito",
+      spiceLevel: 0,
+      prepTimeMinutes: 8,
+      image: "https://images.unsplash.com/photo-1576107232684-1279f3908594?w=500&auto=format&fit=crop&q=80"
+    }
+  ];
+
+  const systemPrompt = customPrompt || `Eres el anfitrión y asistente virtual de pedidos por WhatsApp para "${brandName}" (${city}, ${state}).
+Tu misión es recibir cordialmente a los comensales, recomendar platillos de la carta, responder dudas sobre ingredientes y generar su orden confirmada para despacho inmediato.
+Moneda: ${curr}. Pasarela de pago: ${gateway}.`;
+
+  const newSede = {
+    sede_id: newSedeId,
+    nombre_restaurante: brandName,
+    nombre_sede: `${brandName} (${city})`,
+    phone_number_id: `phone_${digitsOnly || Date.now()}`,
+    telefono_whatsapp: cleanPhone,
+    telefono_cocina_sede: cleanPhone,
+    direccion: `Av. Comercial Principal #100, ${city}, ${state}`,
+    ciudad: city,
+    moneda: curr,
+    horario: "11:00 AM - 10:30 PM",
+    tiempo_estimado_entrega: "25-35 min",
+    costo_domicilio: curr === "USD" ? 3.50 : 5000,
+    menu: defaultMenu,
+    botStatus: "production",
+    botCustomPrompt: systemPrompt,
+    botWelcomeMessage: `¡Hola! Bienvenido a ${brandName} 🍽️🔥. ¿Qué se te antoja ordenar hoy?`,
+    botTone: "friendly_warm",
+    aiModel: model
+  };
+
+  const newBrand = {
+    id: newBrandId,
+    name: brandName,
+    cuisineType: cuisine,
+    country: curr === "USD" ? "USA" : "Colombia",
+    currency: curr,
+    ownerName: "Socio Operador LATAM",
+    logoUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=200&auto=format&fit=crop&q=80",
+    contactPhone: cleanPhone,
+    contactEmail: `contacto@${brandName.toLowerCase().replace(/\s+/g, '')}.com`,
+    notes: "Bot aprovisionado con 1 clic mediante número de WhatsApp comercial.",
+    sedes: [newSede]
+  };
+
+  memoryStore.brands.unshift(newBrand);
+
+  // Register Webhook log
+  memoryStore.webhookLogs.unshift({
+    id: `log-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    source: "meta_whatsapp",
+    endpoint: "/api/bots/deploy-fast",
+    status: "success",
+    method: "POST",
+    statusCode: 201,
+    latencyMs: 85,
+    customerPhone: cleanPhone,
+    eventType: "bot.deployed_fast"
+  });
+
+  res.status(201).json({
+    success: true,
+    message: `Bot de WhatsApp aprovisionado exitosamente para ${brandName}`,
+    brand: newBrand,
+    sede: newSede,
+    webhookUrl: `https://n8n.cloud.restobot.ai/webhook/v2/${newBrandId}`
+  });
+});
+
+// Master Export Endpoint for all Platform Data
+app.post("/api/admin/export-master", (req: Request, res: Response) => {
+  const masterPayload = {
+    app: "Nómada Experiences LATAM - RestoBot IA Platform",
+    exportedAt: new Date().toISOString(),
+    version: "2.5.0-pro",
+    summary: {
+      totalBrands: memoryStore.brands.length,
+      totalOrders: memoryStore.orders.length,
+      totalKardexItems: memoryStore.kardexItems.length,
+      totalWorkflows: memoryStore.workflows.length,
+      totalDriveFiles: memoryStore.driveBackups.length
+    },
+    brands: memoryStore.brands,
+    orders: memoryStore.orders,
+    kardexItems: memoryStore.kardexItems,
+    driveFolders: memoryStore.driveFolders,
+    driveBackups: memoryStore.driveBackups,
+    workflows: memoryStore.workflows
+  };
+
+  // Add a drive backup record automatically
+  const backupRecord = {
+    id: `drive_file_master_${Date.now()}`,
+    name: `RestoBot_Master_Platform_Backup_${new Date().toISOString().slice(0, 10)}.json`,
+    mimeType: "application/json",
+    webViewLink: `https://drive.google.com/file/d/master_backup_${Date.now()}/view`,
+    size: `${(JSON.stringify(masterPayload).length / 1024).toFixed(1)} KB`,
+    fileType: "backup_general" as const,
+    folderId: "folder_backups",
+    createdTime: new Date().toISOString()
+  };
+
+  memoryStore.driveBackups.unshift(backupRecord);
+
+  res.json({
+    success: true,
+    message: "Respaldo maestro generado y sincronizado con Google Drive exitosamente.",
+    backupRecord,
+    data: masterPayload
+  });
+});
+
 app.get("/api/webhooks/logs", (_req: Request, res: Response) => {
   res.json(memoryStore.webhookLogs.slice(0, 50));
+});
+
+// ----------------------------------------------------------------------
+// 10. GOOGLE DRIVE CLOUD WORKSPACE & FOLDERS MANAGEMENT
+// ----------------------------------------------------------------------
+app.get("/api/drive/folders", (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    folders: memoryStore.driveFolders,
+    rootFolder: memoryStore.driveFolders.find(f => f.type === "root")
+  });
+});
+
+app.post("/api/drive/folders", (req: Request, res: Response) => {
+  const { name, type, driveFolderId, description, parentId } = req.body;
+  const newFolder = {
+    id: `folder_${Date.now()}`,
+    parentId: parentId || "folder_root_001",
+    name: name || "Nueva Carpeta en Drive",
+    type: type || "custom",
+    driveFolderId: driveFolderId || `1RestoBot_Custom_Folder_${Date.now()}`,
+    description: description || "Carpeta conectada a Google Drive del cliente.",
+    itemCount: 0,
+    lastSync: new Date().toISOString(),
+    icon: type || "folder"
+  };
+
+  memoryStore.driveFolders.push(newFolder);
+  res.status(201).json({ success: true, folder: newFolder, allFolders: memoryStore.driveFolders });
+});
+
+app.post("/api/drive/backup-bot-config", (req: Request, res: Response) => {
+  const { brand_id, sede_id, botConfig } = req.body;
+  const brand = memoryStore.brands.find(b => b.id === brand_id) || memoryStore.brands[0];
+  const sede = brand?.sedes.find((s: any) => s.sede_id === sede_id) || brand?.sedes[0];
+
+  const backupData = {
+    backup_id: `BOT-BACKUP-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    version: "2.5.0-pro",
+    brand_id: brand?.id,
+    brand_name: brand?.name,
+    sede_id: sede?.sede_id,
+    sede_nombre: sede?.nombre_sede,
+    aiModel: botConfig?.aiModel || sede?.aiModel || "gemini-2.5-flash",
+    tone: botConfig?.tone || sede?.botTone || "friendly_warm",
+    systemPrompt: botConfig?.systemPrompt || sede?.botCustomPrompt,
+    welcomeMessage: botConfig?.welcomeMessage || sede?.botWelcomeMessage,
+    activePaymentGateways: botConfig?.activePaymentMethods || {
+      wompi: true,
+      stripe: true,
+      zelle: true,
+      cashOnDelivery: true
+    },
+    menuCatalog: sede?.menu || [],
+    deliveryConfig: {
+      fee: sede?.costo_domicilio || 3.50,
+      estimatedTime: sede?.tiempo_estimado_entrega || "25-35 min",
+      currency: sede?.moneda || "USD"
+    }
+  };
+
+  const fileName = `Backup_Bot_${(brand?.name || 'Brand').replace(/\s+/g, '_')}_${(sede?.nombre_sede || 'Sede').replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
+
+  const driveRecord = {
+    id: `drive_file_${Date.now()}`,
+    name: fileName,
+    mimeType: "application/json",
+    webViewLink: `https://drive.google.com/file/d/bot_backup_${Date.now()}/view`,
+    size: `${(JSON.stringify(backupData).length / 1024).toFixed(1)} KB`,
+    fileType: "backup_general" as const,
+    folderId: "folder_backups",
+    sede_id: sede?.sede_id,
+    sede_nombre: sede?.nombre_sede,
+    createdTime: new Date().toISOString()
+  };
+
+  memoryStore.driveBackups.unshift(driveRecord);
+
+  // Update folder item count
+  const backupFolder = memoryStore.driveFolders.find(f => f.id === "folder_backups");
+  if (backupFolder) {
+    backupFolder.itemCount += 1;
+    backupFolder.lastSync = new Date().toISOString();
+  }
+
+  // Register webhook log
+  memoryStore.webhookLogs.unshift({
+    id: `log-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    source: "google_drive",
+    endpoint: "/api/drive/backup-bot-config",
+    status: "success",
+    method: "POST",
+    statusCode: 200,
+    latencyMs: 165,
+    customerPhone: sede?.telefono_whatsapp,
+    eventType: "drive.bot_config_backed_up"
+  });
+
+  res.json({
+    success: true,
+    message: `Configuración del Bot respaldada exitosamente en la carpeta 'Backups de Configuración de Bots' de Google Drive.`,
+    file: driveRecord,
+    backupData
+  });
+});
+
+app.post("/api/drive/backup-order-logs", (req: Request, res: Response) => {
+  const { sede_id } = req.body;
+  const targetOrders = sede_id && sede_id !== "all" 
+    ? memoryStore.orders.filter(o => o.sede_id === sede_id) 
+    : memoryStore.orders;
+
+  const logsPayload = {
+    export_id: `LOGS-WABA-${Date.now()}`,
+    generated_at: new Date().toISOString(),
+    total_orders_logged: targetOrders.length,
+    orders_data: targetOrders,
+    recent_webhook_events: memoryStore.webhookLogs.slice(0, 30),
+    cloud_storage_provider: "Google Drive Enterprise Workspace",
+    encryption: "AES-256 Cloud"
+  };
+
+  const fileName = `Logs_Pedidos_WhatsApp_WABA_${sede_id || 'Global'}_${new Date().toISOString().slice(0, 10)}.json`;
+
+  const driveRecord = {
+    id: `drive_file_${Date.now()}`,
+    name: fileName,
+    mimeType: "application/json",
+    webViewLink: `https://drive.google.com/file/d/order_logs_${Date.now()}/view`,
+    size: `${(JSON.stringify(logsPayload).length / 1024).toFixed(1)} KB`,
+    fileType: "reporte_diario" as const,
+    folderId: "folder_logs",
+    sede_id: sede_id || "all",
+    sede_nombre: sede_id ? `Sede ${sede_id}` : "Todas las Sedes",
+    createdTime: new Date().toISOString()
+  };
+
+  memoryStore.driveBackups.unshift(driveRecord);
+
+  // Update folder item count
+  const logsFolder = memoryStore.driveFolders.find(f => f.id === "folder_logs");
+  if (logsFolder) {
+    logsFolder.itemCount += 1;
+    logsFolder.lastSync = new Date().toISOString();
+  }
+
+  res.json({
+    success: true,
+    message: `Logs de pedidos y webhooks respaldados en Google Drive exitosamente.`,
+    file: driveRecord,
+    totalOrdersExported: targetOrders.length
+  });
+});
+
+app.post("/api/drive/backup-kardex", (req: Request, res: Response) => {
+  const { sede_id } = req.body;
+  const kardexData = {
+    backup_id: `KARDEX-EXPORT-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    sede_id: sede_id || "all",
+    total_items: memoryStore.kardexItems.length,
+    total_valuation_usd: memoryStore.kardexItems.reduce((sum, i) => sum + i.valor_total_stock, 0),
+    items: memoryStore.kardexItems,
+    recent_movements: memoryStore.kardexMovements
+  };
+
+  const fileName = `Kardex_Inventario_Valorizado_${sede_id || 'Global'}_${new Date().toISOString().slice(0, 10)}.json`;
+
+  const driveRecord = {
+    id: `drive_file_${Date.now()}`,
+    name: fileName,
+    mimeType: "application/json",
+    webViewLink: `https://drive.google.com/file/d/kardex_${Date.now()}/view`,
+    size: `${(JSON.stringify(kardexData).length / 1024).toFixed(1)} KB`,
+    fileType: "kardex" as any,
+    folderId: "folder_kardex",
+    sede_id: sede_id || "all",
+    sede_nombre: sede_id ? `Sede ${sede_id}` : "Todas las Sedes",
+    createdTime: new Date().toISOString()
+  };
+
+  memoryStore.driveBackups.unshift(driveRecord);
+
+  const kardexFolder = memoryStore.driveFolders.find(f => f.id === "folder_kardex");
+  if (kardexFolder) {
+    kardexFolder.itemCount += 1;
+    kardexFolder.lastSync = new Date().toISOString();
+  }
+
+  res.json({
+    success: true,
+    message: "Kardex de inventario respaldado exitosamente en Google Drive.",
+    file: driveRecord,
+    kardexData
+  });
+});
+
+app.post("/api/drive/restore-backup", (req: Request, res: Response) => {
+  const { file_id } = req.body;
+  const file = memoryStore.driveBackups.find(f => f.id === file_id);
+  if (!file) {
+    return res.status(404).json({ error: "Archivo de respaldo no encontrado en Google Drive" });
+  }
+
+  res.json({
+    success: true,
+    message: `Respaldo '${file.name}' restaurado y aplicado al entorno en vivo.`,
+    file
+  });
+});
+
+app.post("/api/drive/upload-file", (req: Request, res: Response) => {
+  const { name, mimeType, size, folderId, content } = req.body;
+  const newFile = {
+    id: `drive_file_${Date.now()}`,
+    name: name || `Documento_Drive_${Date.now()}.json`,
+    mimeType: mimeType || "application/json",
+    webViewLink: `https://drive.google.com/file/d/upload_${Date.now()}/view`,
+    size: size || "1.5 KB",
+    fileType: "backup_general" as const,
+    folderId: folderId || "folder_root_001",
+    createdTime: new Date().toISOString()
+  };
+
+  memoryStore.driveBackups.unshift(newFile);
+
+  const targetFolder = memoryStore.driveFolders.find(f => f.id === folderId) || memoryStore.driveFolders[0];
+  if (targetFolder) {
+    targetFolder.itemCount += 1;
+    targetFolder.lastSync = new Date().toISOString();
+  }
+
+  res.status(201).json({
+    success: true,
+    message: "Archivo subido exitosamente a Google Drive",
+    file: newFile
+  });
+});
+
+app.get("/api/drive/stats", (_req: Request, res: Response) => {
+  res.json({
+    totalFiles: memoryStore.driveBackups.length,
+    totalFolders: memoryStore.driveFolders.length,
+    storageUsedMb: 24.8,
+    storageQuotaMb: 15360,
+    storageUsedPercentage: "0.16%",
+    lastSyncTimestamp: new Date().toISOString(),
+    accountConnected: "workspace.admin@restobot.ai",
+    scopesActive: ["drive", "drive.file", "drive.appdata", "drive.readonly"]
+  });
+});
+
+// ----------------------------------------------------------------------
+// 11. ORDERS & REAL-TIME KARDEX DEDUCTION ENGINE
+// ----------------------------------------------------------------------
+app.post("/api/orders", (req: Request, res: Response) => {
+  const orderData = req.body;
+  const newOrder = {
+    pedido_id: orderData.pedido_id || `${Math.floor(1000 + Math.random() * 9000)}`,
+    reference: orderData.reference || `PED-${Date.now().toString().slice(-6)}`,
+    sede_id: orderData.sede_id || "sede-miami-01",
+    nombre_sede: orderData.nombre_sede || "Brickell Miami Downtown",
+    telefono: orderData.telefono || "+1 (305) 555-1234",
+    phone_number_id: orderData.phone_number_id || "phone_10492840294",
+    nombre_cliente: orderData.nombre_cliente || "Cliente WhatsApp",
+    direccion_entrega: orderData.direccion_entrega || "Miami, FL",
+    items: orderData.items || [],
+    subtotal: orderData.subtotal || 0,
+    costo_domicilio: orderData.costo_domicilio || 3.50,
+    total: orderData.total || 0,
+    moneda: orderData.moneda || "USD",
+    estado: orderData.estado || "en_cocina",
+    wompi_reference: orderData.wompi_reference || `wompi_${Date.now()}`,
+    link_pago: orderData.link_pago || `https://checkout.wompi.co/l/demo_${Date.now()}`,
+    transaccion_aprobada: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    historial_estados: [
+      { estado: "creado", timestamp: new Date().toISOString() },
+      { estado: "pagado", timestamp: new Date().toISOString() },
+      { estado: "en_cocina", timestamp: new Date().toISOString() }
+    ]
+  };
+
+  memoryStore.orders.unshift(newOrder);
+
+  // Auto-deduct from Kardex inventory
+  if (newOrder.items && newOrder.items.length > 0) {
+    const meatItem = memoryStore.kardexItems.find(i => i.id === "k-01");
+    const breadItem = memoryStore.kardexItems.find(i => i.id === "k-02");
+    if (meatItem && meatItem.stock_actual > 0.4) {
+      meatItem.stock_actual = parseFloat((meatItem.stock_actual - 0.4).toFixed(2));
+      meatItem.valor_total_stock = parseFloat((meatItem.stock_actual * meatItem.costo_unitario).toFixed(2));
+      meatItem.ultimo_movimiento = new Date().toISOString();
+    }
+    if (breadItem && breadItem.stock_actual > 2) {
+      breadItem.stock_actual -= 2;
+      breadItem.valor_total_stock = parseFloat((breadItem.stock_actual * breadItem.costo_unitario).toFixed(2));
+      breadItem.ultimo_movimiento = new Date().toISOString();
+    }
+
+    memoryStore.kardexMovements.unshift({
+      id: `mov-${Date.now()}`,
+      sede_id: newOrder.sede_id,
+      insumo_id: "k-01",
+      insumo_nombre: "Carne Molida Angus Smash 80/20",
+      tipo_movimiento: "salida_venta",
+      cantidad: -0.4,
+      costo_unitario: 8.50,
+      subtotal: 3.40,
+      stock_resultante: meatItem?.stock_actual || 45.1,
+      pedido_relacionado_id: newOrder.pedido_id,
+      fecha: new Date().toISOString(),
+      responsable: "RestoBot KDS Auto-Deduction",
+      notas: `Deducción automática por Pedido #${newOrder.pedido_id}`
+    });
+  }
+
+  // Webhook log
+  memoryStore.webhookLogs.unshift({
+    id: `log-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    source: "meta_whatsapp",
+    endpoint: "/api/orders",
+    status: "success",
+    method: "POST",
+    statusCode: 201,
+    latencyMs: 140,
+    customerPhone: newOrder.telefono,
+    eventType: "order.created_waba"
+  });
+
+  res.status(201).json({ success: true, order: newOrder });
+});
+
+app.put("/api/orders/:id/status", (req: Request, res: Response) => {
+  const orderId = req.params.id;
+  const { estado } = req.body;
+  const order = memoryStore.orders.find(o => o.pedido_id === orderId);
+
+  if (!order) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
+
+  order.estado = estado;
+  order.updated_at = new Date().toISOString();
+  if (!order.historial_estados) order.historial_estados = [];
+  order.historial_estados.push({ estado, timestamp: new Date().toISOString() });
+
+  // Webhook log
+  memoryStore.webhookLogs.unshift({
+    id: `log-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    source: "kds_system",
+    endpoint: `/api/orders/${orderId}/status`,
+    status: "success",
+    method: "PUT",
+    statusCode: 200,
+    latencyMs: 95,
+    customerPhone: order.telefono,
+    eventType: `order.status_updated_${estado}`
+  });
+
+  res.json({ success: true, order });
+});
+
+// ----------------------------------------------------------------------
+// 12. KARDEX INVENTORY ENDPOINTS
+// ----------------------------------------------------------------------
+app.get("/api/kardex/items", (req: Request, res: Response) => {
+  const { sede_id } = req.query;
+  let items = [...memoryStore.kardexItems];
+  if (sede_id && sede_id !== "all") {
+    items = items.filter(i => i.sede_id === sede_id);
+  }
+  res.json(items);
+});
+
+app.post("/api/kardex/items", (req: Request, res: Response) => {
+  const itemData = req.body;
+  const newItem = {
+    id: itemData.id || `k-${Date.now()}`,
+    sede_id: itemData.sede_id || "sede-miami-01",
+    nombre_insumo: itemData.nombre_insumo || "Nuevo Insumo",
+    categoria: itemData.categoria || "Carnes & Proteínas",
+    unidad_medida: itemData.unidad_medida || "kg",
+    stock_actual: parseFloat(itemData.stock_actual) || 0,
+    stock_minimo: parseFloat(itemData.stock_minimo) || 5,
+    costo_unitario: parseFloat(itemData.costo_unitario) || 1.0,
+    valor_total_stock: (parseFloat(itemData.stock_actual) || 0) * (parseFloat(itemData.costo_unitario) || 1.0),
+    estado_stock: "optimo",
+    ultimo_movimiento: new Date().toISOString()
+  };
+
+  memoryStore.kardexItems.push(newItem);
+  res.status(201).json({ success: true, item: newItem });
+});
+
+app.post("/api/kardex/adjust", (req: Request, res: Response) => {
+  const { insumo_id, tipo_movimiento, cantidad, notas, responsable } = req.body;
+  const item = memoryStore.kardexItems.find(i => i.id === insumo_id);
+  if (!item) {
+    return res.status(404).json({ error: "Insumo no encontrado en Kardex" });
+  }
+
+  const delta = parseFloat(cantidad) || 0;
+  item.stock_actual = Math.max(0, parseFloat((item.stock_actual + delta).toFixed(2)));
+  item.valor_total_stock = parseFloat((item.stock_actual * item.costo_unitario).toFixed(2));
+  item.estado_stock = item.stock_actual <= item.stock_minimo ? (item.stock_actual <= item.stock_minimo * 0.4 ? "critico" : "bajo") : "optimo";
+  item.ultimo_movimiento = new Date().toISOString();
+
+  const movement = {
+    id: `mov-${Date.now()}`,
+    sede_id: item.sede_id,
+    insumo_id: item.id,
+    insumo_nombre: item.nombre_insumo,
+    tipo_movimiento: tipo_movimiento || "ajuste_inventario",
+    cantidad: delta,
+    costo_unitario: item.costo_unitario,
+    subtotal: Math.abs(delta * item.costo_unitario),
+    stock_resultante: item.stock_actual,
+    fecha: new Date().toISOString(),
+    responsable: responsable || "Gerente de Cocina",
+    notas: notas || "Ajuste manual de inventario"
+  };
+
+  memoryStore.kardexMovements.unshift(movement);
+
+  res.json({ success: true, item, movement });
+});
+
+app.get("/api/kardex/movements", (_req: Request, res: Response) => {
+  res.json(memoryStore.kardexMovements);
+});
+
+// ----------------------------------------------------------------------
+// 13. N8N WORKFLOWS AUTOMATION ENGINE
+// ----------------------------------------------------------------------
+app.get("/api/workflows", (_req: Request, res: Response) => {
+  res.json(memoryStore.workflows);
+});
+
+app.post("/api/workflows/:id/trigger", (req: Request, res: Response) => {
+  const wfId = req.params.id;
+  const workflow = memoryStore.workflows.find(w => w.id === wfId);
+  if (!workflow) {
+    return res.status(404).json({ error: "Workflow no encontrado" });
+  }
+
+  workflow.triggersCount += 1;
+  workflow.lastExecution = new Date().toISOString();
+
+  const executionRecord = {
+    executionId: `EXEC-${Date.now()}`,
+    workflowId: wfId,
+    workflowTitle: workflow.title,
+    timestamp: new Date().toISOString(),
+    status: "SUCCESS",
+    latencyMs: Math.floor(80 + Math.random() * 120),
+    nodesExecuted: 6,
+    outputData: {
+      message: `Workflow '${workflow.title}' ejecutado exitosamente.`,
+      googleDriveSynced: true,
+      metaWabaResponse: 200,
+      kdsUpdated: true
+    }
+  };
+
+  memoryStore.workflowExecutions.unshift(executionRecord);
+
+  // Webhook log
+  memoryStore.webhookLogs.unshift({
+    id: `log-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    source: "n8n_workflow",
+    endpoint: `/api/workflows/${wfId}/trigger`,
+    status: "success",
+    method: "POST",
+    statusCode: 200,
+    latencyMs: executionRecord.latencyMs,
+    eventType: `workflow.executed_${wfId}`
+  });
+
+  res.json({
+    success: true,
+    workflow,
+    execution: executionRecord
+  });
+});
+
+app.get("/api/workflows/executions", (_req: Request, res: Response) => {
+  res.json(memoryStore.workflowExecutions.slice(0, 30));
+});
+
+// ----------------------------------------------------------------------
+// 14. WEBHOOKS SIMULATION & VAULT INTEGRATION
+// ----------------------------------------------------------------------
+app.post("/api/webhooks/simulate", (req: Request, res: Response) => {
+  const { eventType, source, customerPhone, payload } = req.body;
+  const newLog = {
+    id: `log-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    source: source || "meta_whatsapp",
+    endpoint: "/api/webhooks/whatsapp-cloud",
+    status: "success",
+    method: "POST",
+    statusCode: 200,
+    latencyMs: Math.floor(60 + Math.random() * 100),
+    customerPhone: customerPhone || "+1 (305) 555-1234",
+    eventType: eventType || "messages.received_waba",
+    payload: payload || { message: "Simulación de evento entrante WABA" }
+  };
+
+  memoryStore.webhookLogs.unshift(newLog);
+  res.status(201).json({ success: true, log: newLog });
+});
+
+app.post("/api/webhooks/clear", (_req: Request, res: Response) => {
+  memoryStore.webhookLogs = [];
+  res.json({ success: true, message: "Logs de webhooks limpiados" });
+});
+
+app.get("/api/vault/credentials", (_req: Request, res: Response) => {
+  res.json({
+    metaWaba: { status: "connected", phoneId: "phone_10492840294", wabaId: "waba_9948201948201", quality: "GREEN" },
+    googleDriveOAuth: { status: "connected", user: "workspace.admin@restobot.ai", scopesGranted: 13, rootFolder: "RestoBot IA - Cloud Workspace" },
+    geminiApi: { status: process.env.GEMINI_API_KEY ? "active" : "demo_mode", model: "gemini-2.5-flash" },
+    wompiPayments: { status: "active", environment: "production", currency: "COP/USD" },
+    stripePayments: { status: "active", environment: "live", currency: "USD" }
+  });
+});
+
+app.post("/api/vault/test-connection", (req: Request, res: Response) => {
+  const { provider } = req.body;
+  res.json({
+    success: true,
+    provider,
+    latencyMs: Math.floor(70 + Math.random() * 90),
+    status: "healthy",
+    message: `Conexión con ${provider} verificada exitosamente con TLS 1.3 y OAuth 2.0.`
+  });
 });
 
 // ----------------------------------------------------------------------

@@ -139,13 +139,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   ).length;
   const totalOrdersCount = orders.length;
 
-  // Primary fast tabs on the top bar with vibrant distinct themes
-  const liveOpsTabs = [
+  // Primary fast tabs grouped by operations
+  const coreBotTabs = [
     {
       id: 'chat_bot',
-      label: t('nav.chat_bot'),
+      label: language === 'es' ? 'Bot WhatsApp' : 'WhatsApp Bot',
       icon: Bot,
-      badgeText: 'LIVE IA',
+      badgeText: 'LIVE',
       badgeType: 'emerald',
       activeGradient: 'from-emerald-600 via-teal-600 to-emerald-500',
       activeBorder: 'border-emerald-400/60 ring-1 ring-emerald-400/40 shadow-emerald-500/30',
@@ -154,7 +154,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
     {
       id: 'bot_laboratory',
-      label: t('nav.bot_laboratory'),
+      label: language === 'es' ? 'Studio & Menús' : 'Studio & Menus',
       icon: Sliders,
       badgeText: 'STUDIO',
       badgeType: 'purple',
@@ -165,20 +165,23 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
     {
       id: 'documentation_guide',
-      label: t('nav.documentation_guide'),
+      label: language === 'es' ? 'Guía & Docs' : 'Guide & Docs',
       icon: BookOpen,
-      badgeText: 'MANUAL',
+      badgeText: 'DOCS',
       badgeType: 'cyan',
       activeGradient: 'from-blue-600 via-indigo-600 to-cyan-500',
       activeBorder: 'border-cyan-400/60 ring-1 ring-cyan-400/40 shadow-cyan-500/30',
       inactiveHover: 'hover:border-cyan-500/50 hover:bg-cyan-950/40 hover:text-cyan-300',
       accentColor: 'text-cyan-400'
-    },
+    }
+  ];
+
+  const kitchenAndOrderTabs = [
     {
       id: 'kds_cocina',
-      label: t('nav.kds_cocina'),
+      label: language === 'es' ? 'Cocina KDS' : 'KDS Kitchen',
       icon: ChefHat,
-      badgeText: inKitchenCount > 0 ? `${inKitchenCount} ${language === 'es' ? 'EN COCINA' : 'IN KITCHEN'}` : (language === 'es' ? 'EN VIVO' : 'LIVE'),
+      badgeText: inKitchenCount > 0 ? `${inKitchenCount}` : 'KDS',
       badgeType: 'amber',
       activeGradient: 'from-amber-600 via-orange-600 to-amber-500',
       activeBorder: 'border-amber-400/60 ring-1 ring-amber-400/40 shadow-orange-500/30',
@@ -187,9 +190,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
     {
       id: 'kanban_pedidos',
-      label: t('nav.kanban_pedidos'),
+      label: language === 'es' ? 'Pedidos' : 'Orders',
       icon: Layers,
-      badgeText: totalOrdersCount > 0 ? `${totalOrdersCount} ${language === 'es' ? 'PEDIDOS' : 'ORDERS'}` : 'KANBAN',
+      badgeText: totalOrdersCount > 0 ? `${totalOrdersCount}` : 'KANBAN',
       badgeType: 'indigo',
       activeGradient: 'from-indigo-600 via-blue-600 to-indigo-500',
       activeBorder: 'border-indigo-400/60 ring-1 ring-indigo-400/40 shadow-indigo-500/30',
@@ -198,9 +201,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
     {
       id: 'analytics',
-      label: t('nav.analytics'),
+      label: language === 'es' ? 'Métricas' : 'Analytics',
       icon: TrendingUp,
-      badgeText: 'MÉTRICAS',
+      badgeText: 'ROI',
       badgeType: 'cyan',
       activeGradient: 'from-cyan-600 via-teal-600 to-blue-600',
       activeBorder: 'border-cyan-400/60 ring-1 ring-cyan-400/40 shadow-cyan-500/30',
@@ -213,7 +216,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const expansionTabs = [
     {
       id: 'multi_sedes',
-      label: t('nav.multi_sedes'),
+      label: language === 'es' ? 'Sedes QR' : 'Branches QR',
       icon: Store,
       badgeText: 'QR HD',
       badgeType: 'purple',
@@ -224,7 +227,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
     {
       id: 'landing_usa',
-      label: t('nav.landing_usa'),
+      label: 'Landing USA',
       icon: Sparkles,
       badgeText: '0% FEES',
       badgeType: 'emerald',
@@ -232,6 +235,28 @@ export const Navbar: React.FC<NavbarProps> = ({
       activeBorder: 'border-emerald-400/60 ring-1 ring-emerald-400/40 shadow-emerald-500/30',
       inactiveHover: 'hover:border-emerald-500/50 hover:bg-emerald-950/40 hover:text-emerald-300',
       accentColor: 'text-emerald-400'
+    },
+    {
+      id: 'workspace_hub',
+      label: 'Google Sync',
+      icon: FileSpreadsheet,
+      badgeText: 'DRIVE',
+      badgeType: 'emerald',
+      activeGradient: 'from-teal-600 via-emerald-600 to-green-500',
+      activeBorder: 'border-teal-400/60 ring-1 ring-teal-400/40 shadow-teal-500/30',
+      inactiveHover: 'hover:border-teal-500/50 hover:bg-teal-950/40 hover:text-teal-300',
+      accentColor: 'text-teal-400'
+    },
+    {
+      id: 'kardex_inventario',
+      label: 'Kardex',
+      icon: Flame,
+      badgeText: 'STOCK',
+      badgeType: 'amber',
+      activeGradient: 'from-orange-600 via-amber-600 to-yellow-500',
+      activeBorder: 'border-orange-400/60 ring-1 ring-orange-400/40 shadow-orange-500/30',
+      inactiveHover: 'hover:border-orange-500/50 hover:bg-orange-950/40 hover:text-orange-300',
+      accentColor: 'text-orange-400'
     }
   ];
 
@@ -278,7 +303,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const renderBadge = (text: string, type: string, isActive: boolean) => {
     if (isActive) {
       return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-sm shadow-xs tracking-wider uppercase">
+        <span className="nav-micro-badge bg-white/20 text-white backdrop-blur-sm shadow-xs border border-white/25">
           {type === 'emerald' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping" />}
           {type === 'amber' && <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-ping" />}
           {type === 'indigo' && <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-ping" />}
@@ -287,21 +312,21 @@ export const Navbar: React.FC<NavbarProps> = ({
       );
     }
 
-    let badgeClass = 'bg-slate-800 text-slate-400 border border-slate-700/60';
+    let badgeClass = 'bg-slate-800/90 text-slate-400 border border-slate-700/60';
     if (type === 'emerald') {
-      badgeClass = 'bg-emerald-950/70 text-emerald-300 border border-emerald-500/40 shadow-xs shadow-emerald-900/30';
+      badgeClass = 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 shadow-xs shadow-emerald-950/50';
     } else if (type === 'amber') {
-      badgeClass = 'bg-amber-950/70 text-amber-300 border border-amber-500/40 shadow-xs shadow-amber-900/30';
+      badgeClass = 'bg-amber-950/80 text-amber-300 border border-amber-500/40 shadow-xs shadow-amber-950/50';
     } else if (type === 'indigo') {
-      badgeClass = 'bg-indigo-950/70 text-indigo-300 border border-indigo-500/40 shadow-xs shadow-indigo-900/30';
+      badgeClass = 'bg-indigo-950/80 text-indigo-300 border border-indigo-500/40 shadow-xs shadow-indigo-950/50';
     } else if (type === 'purple') {
-      badgeClass = 'bg-purple-950/70 text-purple-300 border border-purple-500/40 shadow-xs shadow-purple-900/30';
+      badgeClass = 'bg-purple-950/80 text-purple-300 border border-purple-500/40 shadow-xs shadow-purple-950/50';
     } else if (type === 'cyan') {
-      badgeClass = 'bg-cyan-950/70 text-cyan-300 border border-cyan-500/40 shadow-xs shadow-cyan-900/30';
+      badgeClass = 'bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 shadow-xs shadow-cyan-950/50';
     }
 
     return (
-      <span className={`inline-flex items-center gap-1 text-[9.5px] font-black px-1.5 py-0.5 rounded-full tracking-wider uppercase transition-colors ${badgeClass}`}>
+      <span className={`nav-micro-badge ${badgeClass}`}>
         {(type === 'emerald' || type === 'amber') && (
           <span className={`w-1.5 h-1.5 rounded-full ${type === 'emerald' ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
         )}
@@ -515,37 +540,38 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* SECOND ROW: HIGH-IMPACT TACTILE NAVIGATION PANEL + MEGA MENU TRIGGER */}
+      {/* SECOND ROW: ADVANCED CSS3 FLEXBOX & GROUPED WRAPPER NAVIGATION PANEL */}
       <nav 
         aria-label="Navegación Principal de Módulos"
-        className="border-t border-slate-800/90 bg-slate-950/80 backdrop-blur-md px-2 py-2 sm:px-4 relative"
+        className="border-t border-slate-800/90 bg-slate-950/90 backdrop-blur-md px-2 py-1.5 sm:px-4 relative"
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 overflow-x-auto scrollbar-none pb-0.5">
+        <div className="max-w-7xl mx-auto flex flex-wrap lg:flex-nowrap items-center justify-between gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
           
-          {/* PRIMARY GROUP: LIVE OPERATIONS + STUDIO + MANUAL + KDS + KANBAN + ANALYTICS */}
-          <div className="flex items-center gap-2 shrink-0 p-1 rounded-2xl bg-slate-900/90 border border-slate-800/80 shadow-inner">
+          {/* GROUP 1: MEGA-MENU + CORE BOT & STUDIO & DOCS WRAPPER */}
+          <div className="nav-pill-wrapper shrink-0 shadow-inner">
             
             {/* MEGA MENU TRIGGER BUTTON */}
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-[13px] font-black transition-all transform shrink-0 ${
+                className={`nav-micro-btn ${
                   isMegaMenuOpen
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/30 ring-1 ring-indigo-400/50'
-                    : 'bg-gradient-to-r from-slate-900 to-slate-950 text-indigo-300 hover:text-white border border-indigo-500/40 hover:border-indigo-400 hover:bg-indigo-950/50 shadow-xs'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400/50'
+                    : 'bg-slate-900 text-indigo-300 hover:text-white border border-indigo-500/40 hover:border-indigo-400 hover:bg-indigo-950/60 shadow-xs'
                 }`}
-                title="Abrir Explorador de Módulos & Menú Desplegable"
+                title="Abrir Explorador de los 14 Módulos"
               >
-                <div className="p-1 rounded-lg bg-indigo-500/20 text-indigo-300">
+                <div className="p-0.5 rounded-md bg-indigo-500/20 text-indigo-300">
                   <Activity className="w-3.5 h-3.5" />
                 </div>
                 <span className="tracking-tight whitespace-nowrap">Módulos</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isMegaMenuOpen ? 'rotate-180 text-white' : 'text-indigo-400'}`} />
+                <span className="nav-micro-badge bg-indigo-500/30 text-indigo-200 border border-indigo-400/40">14</span>
+                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isMegaMenuOpen ? 'rotate-180 text-white' : 'text-indigo-400'}`} />
               </button>
 
               {/* RENOVATED MEGA-DROPDOWN MENU */}
               {isMegaMenuOpen && (
-                <div className="absolute top-full left-0 mt-3 w-[340px] sm:w-[580px] md:w-[740px] lg:w-[860px] p-5 rounded-3xl bg-slate-900/95 border border-indigo-500/40 shadow-2xl shadow-black/80 backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-4">
+                <div className="absolute top-full left-0 mt-2.5 w-[330px] sm:w-[580px] md:w-[740px] lg:w-[860px] p-4 sm:p-5 rounded-3xl bg-slate-900/98 border border-indigo-500/40 shadow-2xl shadow-black/90 backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-3.5">
                   
                   {/* Search inside Mega Menu */}
                   <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -553,7 +579,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400" />
                       <input
                         type="text"
-                        placeholder="Buscar módulo (ej: Cocina, Sheets, Prompts, Kardex, APIs)..."
+                        placeholder="Buscar módulo (ej: Cocina, Sheets, Prompts, Kardex, APIs, QR)..."
                         value={menuSearchQuery}
                         onChange={(e) => setMenuSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-700/80 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
@@ -569,7 +595,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
 
                   {/* 3 Grouped Columns with Vibrant Color Schemes */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[65vh] overflow-y-auto pr-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 max-h-[60vh] overflow-y-auto pr-1">
                     {megaMenuCategories.map((cat, idx) => {
                       const filteredItems = cat.items.filter(
                         it => menuSearchQuery === '' || it.label.toLowerCase().includes(menuSearchQuery.toLowerCase()) || it.desc.toLowerCase().includes(menuSearchQuery.toLowerCase())
@@ -577,15 +603,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                       if (filteredItems.length === 0) return null;
 
                       return (
-                        <div key={idx} className="space-y-2.5 p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-                          <h5 className="text-[11px] font-black uppercase tracking-wider text-slate-400 px-1 border-b border-slate-800 pb-1.5 flex items-center justify-between">
+                        <div key={idx} className="space-y-2 p-2.5 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+                          <h5 className="text-[10.5px] font-black uppercase tracking-wider text-slate-400 px-1 border-b border-slate-800/80 pb-1.5 flex items-center justify-between">
                             <span>{cat.title}</span>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                            <span className="text-[8.5px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 font-mono">
                               {filteredItems.length}
                             </span>
                           </h5>
 
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             {filteredItems.map((item) => {
                               const Icon = item.icon;
                               const isTabActive = activeTabId === item.id;
@@ -593,7 +619,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                                 <button
                                   key={item.id}
                                   onClick={() => handleTabChange(item.id)}
-                                  className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 group ${
+                                  className={`w-full text-left p-2 rounded-xl transition-all flex items-start gap-2 group ${
                                     isTabActive
                                       ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400'
                                       : 'hover:bg-slate-900/90 text-slate-300 hover:text-white border border-transparent hover:border-slate-700/80'
@@ -602,20 +628,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                                   <div className={`p-1.5 rounded-lg shrink-0 ${
                                     isTabActive ? 'bg-white/20 text-white' : 'bg-slate-900 text-indigo-400 group-hover:text-white group-hover:bg-indigo-600 transition-colors'
                                   }`}>
-                                    <Icon className="w-4 h-4" />
+                                    <Icon className="w-3.5 h-3.5" />
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between">
                                       <span className="text-xs font-bold truncate">{item.label}</span>
                                       {item.badge && (
-                                        <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full ${
+                                        <span className={`text-[8.5px] font-black uppercase px-1.5 py-0.2 rounded-full ${
                                           isTabActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
                                         }`}>
                                           {item.badge}
                                         </span>
                                       )}
                                     </div>
-                                    <p className={`text-[10.5px] truncate mt-0.5 ${isTabActive ? 'text-indigo-100' : 'text-slate-400'}`}>
+                                    <p className={`text-[10px] truncate mt-0.5 ${isTabActive ? 'text-indigo-100' : 'text-slate-400'}`}>
                                       {item.desc}
                                     </p>
                                   </div>
@@ -629,8 +655,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
 
                   {/* Mega Menu Footer Actions */}
-                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                    <span className="flex items-center gap-1.5">
+                  <div className="pt-2.5 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                    <span className="flex items-center gap-1.5 text-[11px]">
                       <Zap className="w-3.5 h-3.5 text-amber-400" />
                       <span>14 módulos activos • Nómada Experiences LATAM</span>
                     </span>
@@ -638,7 +664,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onClick={() => handleTabChange('documentation_guide')}
                       className="text-xs font-black text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
                     >
-                      <span>Ver Documentación Completa</span>
+                      <span>Ver Documentación</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -646,47 +672,53 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            <div className="h-6 w-[1px] bg-slate-800 shrink-0" />
-
-            {/* DIRECT FAST ACCESS TABS */}
-            {liveOpsTabs.map((tab) => {
+            {/* FAST ACCESS CORE BOT TABS */}
+            {coreBotTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTabId === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
-                  className={`group relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-[13px] font-bold transition-all transform duration-150 shrink-0 ${
+                  className={`nav-micro-btn group ${
                     isActive
-                      ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-lg ${tab.activeBorder} scale-[1.02]`
-                      : `bg-slate-950/70 text-slate-200 border border-slate-800/80 ${tab.inactiveHover} shadow-xs hover:scale-[1.01]`
+                      ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-md ${tab.activeBorder}`
+                      : `bg-slate-950/70 text-slate-200 border border-slate-800/80 ${tab.inactiveHover} shadow-xs`
                   }`}
                 >
-                  <div className={`p-1 rounded-lg transition-transform ${
-                    isActive 
-                      ? 'bg-white/20 text-white scale-110 shadow-xs' 
-                      : `bg-slate-900 text-slate-300 group-hover:${tab.accentColor}`
-                  }`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.accentColor}`} />
                   <span className="tracking-tight whitespace-nowrap">{tab.label}</span>
-                  
                   {renderBadge(tab.badgeText, tab.badgeType, isActive)}
-
-                  {isActive && (
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-white rounded-full shadow-xs" />
-                  )}
                 </button>
               );
             })}
           </div>
 
-          {/* DIVIDER */}
-          <div className="h-7 w-[1px] bg-slate-800 shrink-0 hidden md:block" />
+          {/* GROUP 2: KITCHEN & ORDER OPERATIONS WRAPPER */}
+          <div className="nav-pill-wrapper shrink-0 shadow-inner">
+            {kitchenAndOrderTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTabId === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`nav-micro-btn group ${
+                    isActive
+                      ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-md ${tab.activeBorder}`
+                      : `bg-slate-950/70 text-slate-200 border border-slate-800/80 ${tab.inactiveHover} shadow-xs`
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.accentColor}`} />
+                  <span className="tracking-tight whitespace-nowrap">{tab.label}</span>
+                  {renderBadge(tab.badgeText, tab.badgeType, isActive)}
+                </button>
+              );
+            })}
+          </div>
 
-          {/* SECONDARY GROUP: SEDES & LANDING DIRECT BUTTONS */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* GROUP 3: EXPANSION & INTEGRATION SHORTCUTS WRAPPER */}
+          <div className="nav-pill-wrapper shrink-0 shadow-inner hidden md:flex">
             {expansionTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTabId === tab.id;
@@ -694,13 +726,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
-                  className={`group flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-[12.5px] font-semibold transition-all shrink-0 ${
+                  className={`nav-micro-btn group ${
                     isActive
-                      ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-md ${tab.activeBorder} font-bold`
-                      : `bg-slate-900/70 text-slate-300 border border-slate-800/80 ${tab.inactiveHover} hover:text-white`
+                      ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-md ${tab.activeBorder}`
+                      : `bg-slate-950/70 text-slate-300 border border-slate-800/80 ${tab.inactiveHover} hover:text-white shadow-xs`
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 transition-colors ${isActive ? 'text-white' : tab.accentColor}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.accentColor}`} />
                   <span className="whitespace-nowrap">{tab.label}</span>
                   {renderBadge(tab.badgeText, tab.badgeType, isActive)}
                 </button>
