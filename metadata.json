@@ -1,0 +1,10 @@
+{
+  "name": "Nómada Experiences LATAM - Creador & Desplegador de Bots",
+  "description": "Plataforma SaaS PWA y Panel de Mando Central de Nómada Experiences LATAM para la creación, vinculación de números de WhatsApp, menús digitales, pedidos en tiempo real, cocina KDS, envíos y despachos con geolocalización, integración con Google Workspace y despliegue instantáneo de bots de restaurante en LATAM y USA.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

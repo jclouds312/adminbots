@@ -1,0 +1,135 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "Pedido de restaurante multicanal (WhatsApp, KDS, Delivery)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sede_id": { "type": "string" },
+        "cliente_nombre": { "type": "string" },
+        "cliente_telefono": { "type": "string" },
+        "direccion_entrega": { "type": "string" },
+        "estado": { "type": "string", "enum": ["creado", "esperando_pago", "pagado", "en_cocina", "listo_cocina", "en_camino", "entregado", "pago_rechazado", "cancelado"] },
+        "origen": { "type": "string", "enum": ["whatsapp_bot", "web_pwa", "rappi", "uber_eats", "didi_food", "doordash", "salon"] },
+        "metodo_pago": { "type": "string" },
+        "total": { "type": "number" },
+        "moneda": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "sede_id", "cliente_nombre", "estado", "total", "moneda"]
+    },
+    "Branch": {
+      "title": "Branch",
+      "description": "Sede o sucursal del restaurante en USA o LATAM",
+      "type": "object",
+      "properties": {
+        "sede_id": { "type": "string" },
+        "nombre_restaurante": { "type": "string" },
+        "nombre_sede": { "type": "string" },
+        "ciudad": { "type": "string" },
+        "pais": { "type": "string" },
+        "direccion": { "type": "string" },
+        "telefono_whatsapp": { "type": "string" },
+        "moneda": { "type": "string" },
+        "costo_domicilio": { "type": "number" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "cobertura_km": { "type": "number" }
+      },
+      "required": ["sede_id", "nombre_sede", "ciudad", "moneda"]
+    },
+    "KardexItem": {
+      "title": "KardexItem",
+      "description": "Item de inventario y stock de insumos con costeo automático",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sede_id": { "type": "string" },
+        "nombre_insumo": { "type": "string" },
+        "categoria": { "type": "string" },
+        "unidad_medida": { "type": "string" },
+        "stock_actual": { "type": "number" },
+        "stock_minimo": { "type": "number" },
+        "costo_unitario": { "type": "number" },
+        "valor_total_stock": { "type": "number" },
+        "estado_stock": { "type": "string" }
+      },
+      "required": ["id", "sede_id", "nombre_insumo", "stock_actual"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Factura o recibo con cálculo tributario, QR y soporte DIAN / IRS",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "orderId": { "type": "string" },
+        "sede_id": { "type": "string" },
+        "cliente_nombre": { "type": "string" },
+        "subtotal": { "type": "number" },
+        "impuesto": { "type": "number" },
+        "costo_domicilio": { "type": "number" },
+        "propina": { "type": "number" },
+        "total": { "type": "number" },
+        "moneda": { "type": "string" },
+        "fecha": { "type": "string" }
+      },
+      "required": ["id", "invoiceNumber", "orderId", "total"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Contacto CRM de cliente frecuente sincronizado con Google Contacts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "vip": { "type": "boolean" },
+        "totalOrders": { "type": "number" },
+        "totalSpent": { "type": "number" },
+        "preferredBranch": { "type": "string" }
+      },
+      "required": ["id", "name", "phone"]
+    },
+    "AppSetting": {
+      "title": "AppSetting",
+      "description": "Configuraciones persistentes e integraciones API del sistema",
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "value": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["key", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Colección de pedidos en tiempo real para KDS y WhatsApp"
+    },
+    "/branches/{branchId}": {
+      "schema": { "$ref": "#/entities/Branch" },
+      "description": "Colección de sedes operativas en USA y LATAM"
+    },
+    "/kardex_items/{kardexId}": {
+      "schema": { "$ref": "#/entities/KardexItem" },
+      "description": "Insumos, recetas y stock por sede"
+    },
+    "/invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/Invoice" },
+      "description": "Facturas y recibos emitidos"
+    },
+    "/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Libreta de contactos CRM sincronizada con Google Contacts"
+    },
+    "/app_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/AppSetting" },
+      "description": "Credenciales y configuraciones persistentes del restaurante"
+    }
+  }
+}
