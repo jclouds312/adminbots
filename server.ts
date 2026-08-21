@@ -634,6 +634,140 @@ REGLAS DE INTERACCIÓN:
 });
 
 // ----------------------------------------------------------------------
+// 2.1. COPILOTO IA DE AYUDA Y ASISTENCIA TÉCNICA DEL SISTEMA
+// ----------------------------------------------------------------------
+app.post("/api/ai/system-copilot", async (req: Request, res: Response) => {
+  const { query, activeTab, userRole, brandName, sedeName, conversationHistory } = req.body;
+
+  const systemKnowledge = `
+Eres el "Copiloto IA de Soporte y Arquitectura Maestro" para RestoBot IA & Nómada Experiences LATAM.
+Tu rol es asistir a administradores, gerentes de franquicias, cocineros, desarrolladores y operadores para usar, configurar, testear y solucionar problemas en cada uno de los 14 módulos de la plataforma.
+
+CONOCIMIENTO DE LOS 14 MÓDULOS DE LA PLATAFORMA:
+1. 'chat_bot' (Bot WhatsApp & Carrito): Simulador conversacional con IA Gemini 2.5, carrito dinámico, links de pago Wompi/Stripe, cálculo de envíos y envío a cocina.
+2. 'bot_laboratory' (Laboratorio de Bots & Menús): Creador de marcas, sedes multi-país (USA $USD / Colombia $COP), editor de platos con fotos HD, badges, niveles de picante y prompt maestro de IA.
+3. 'documentation_guide' (Guía y Documentación): Manual interactivo paso a paso, sandbox de pruebas, cURLs, arquitectura y FAQ.
+4. 'kds_cocina' (KDS Cocina en Tiempo Real): Pantalla de cocina con cronómetros por color (verde/amarillo/rojo), ingredientes, botón de "Listo" y alertas auditivas.
+5. 'kanban_pedidos' (Tablero Kanban): Pipeline de órdenes (Creado, En Cocina, Listo, En Camino, Entregado), visor de facturas y asignación de repartidores.
+6. 'analytics' (Analíticas & Ventas D3): Curva interactiva semanal D3.js, donut de sedes D3, horas pico, top platos y cálculo de ahorro del 30% en comisiones.
+7. 'multi_sedes' (Franquicias & QR HD): Generador de códigos QR vectoriales y PNG HD con enlace directo a WhatsApp para mesas y empaques.
+8. 'landing_usa' (Landing Ventas USA 0% Comisiones): Página de captación comercial para restaurantes en Florida/USA y calculadora de ROI.
+9. 'plan_18_dias' (Plan Maestro de 18 Días): Roadmap de implementación comercial con Alejandro y métricas de expansión.
+10. 'workspace_hub' (Google Workspace Hub): Sincronizador con Google Sheets, Google Drive, Gmail y Google Contacts.
+11. 'kardex_inventario' (Kardex & Recetas): Descuento automático de insumos (carne, pan, salsas) por comanda enviada a cocina.
+12. 'n8n_workflows' (Workflows Automatizados): Escenarios de integración entre Meta Cloud API, pasarelas, base de datos y Google Workspace.
+13. 'api_catalog' (Catálogo de APIs): Especificación OpenAPI/Swagger de endpoints REST para órdenes, menús, sedes y webhooks.
+14. 'webhook_logs' (Logs de Webhooks): Auditoría en vivo de eventos HTTP, latencia en ms y códigos de respuesta.
+15. 'config_vault' (Bóveda de Configuración): Almacén seguro de tokens Meta WABA, llaves Wompi, Stripe y Google OAuth.
+
+DIRECTRICES PARA RESPONDER:
+- Responde siempre en español claro, profesional, directo y estructurado.
+- Usa formato Markdown con encabezados (###), negritas para conceptos clave y listas con viñetas.
+- Si el usuario pide un ejemplo de cURL o código, suminístralo con formato sintáctico limpio.
+- Si es una pregunta operativa, indica el paso 1, 2, 3 concreto y el módulo donde debe ejecutarse.
+- Sé cordial, técnico y sumamente resolutivo.
+`;
+
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      // Intelligent rich fallback response if API key is not present in container
+      const queryLower = (query || "").toLowerCase();
+      let fallbackText = "";
+      let suggestedActions: string[] = [];
+      let relevantTab = activeTab || "documentation_guide";
+
+      if (queryLower.includes("crear") && (queryLower.includes("bot") || queryLower.includes("restaurante") || queryLower.includes("sede"))) {
+        fallbackText = `### 🚀 Cómo Crear un Bot o Nueva Sede en 4 Pasos:
+1. **Abre el Laboratorio de Bots**: Ve al módulo **Studio & Menús** (\`bot_laboratory\`).
+2. **Crea el Restaurante**: Pulsa **"+ Crear Restaurante"**, define nombre, país (USA / Colombia) y moneda (USD / COP).
+3. **Añade la Sede Operativa**: Ingresa el número de WhatsApp en formato internacional E.164 (ej. \`+13055550199\` o \`+573105550188\`).
+4. **Diseña el Menú & Prompt**: Sube platos con fotos HD, precios y calibra el prompt de Gemini 2.5 Flash. Pulsa **"Guardar y Lanzar a Producción"**.`;
+        suggestedActions = ["Ir al Laboratorio de Bots", "Ver Guía de Creación", "Probar en Sandbox"];
+        relevantTab = "bot_laboratory";
+      } else if (queryLower.includes("kds") || queryLower.includes("cocina") || queryLower.includes("comanda")) {
+        fallbackText = `### 👨‍🍳 Operación de la Pantalla KDS Cocina:
+- **Recepción en Vivo**: Las órdenes pagadas ingresan automáticamente en menos de 45ms.
+- **Semáforo de Cocción**: Verde (<10 min), Amarillo (10-20 min), Rojo (>20 min crítico).
+- **Despacho**: Al pulsar **"Marcar como Listo"**, el sistema asigna repartidor y notifica al cliente por WhatsApp.
+- **Kardex Automático**: Los insumos de cada plato se descuentan al instante del inventario.`;
+        suggestedActions = ["Abrir KDS Cocina", "Ver Kardex Inventario", "Ver Kanban Pedidos"];
+        relevantTab = "kds_cocina";
+      } else if (queryLower.includes("google") || queryLower.includes("sheet") || queryLower.includes("drive")) {
+        fallbackText = `### 📊 Sincronización con Google Workspace:
+1. Ve al módulo **Google Workspace Hub** (\`workspace_hub\`) o **Analíticas**.
+2. Pulsa el botón **"Sincronizar a Google Sheets Ahora"**.
+3. El sistema sincroniza 4 pestañas maestras: \`Pedidos_Live\`, \`Kardex_Inventario\`, \`Cierre_Ventas_USD\` y \`Clientes_WhatsApp\`.`;
+        suggestedActions = ["Abrir Workspace Hub", "Ver Analíticas D3", "Exportar Manual"];
+        relevantTab = "workspace_hub";
+      } else {
+        fallbackText = `### 💡 Asistente RestoBot IA - Guía Operativa:
+He analizado tu consulta sobre **"${query}"**.
+
+**Recomendaciones para el módulo actual (${activeTab || 'General'}):**
+- **Para pruebas rápidas**: Utiliza el **Simulador de WhatsApp** o la **Consola cURL** en la Guía de Documentación.
+- **Para configurar menú o sedes**: Ingresa al **Laboratorio de Bots & Menús**.
+- **Para despachos y comandas**: Monitorea el **KDS Cocina** y el **Tablero Kanban**.
+- **Para auditoría**: Revisa los **Logs de Webhooks** y la **Bóveda de Configuración**.`;
+        suggestedActions = ["Ver Manual de 14 Módulos", "Ir a Chat Bot IA", "Abrir Consola cURL"];
+      }
+
+      return res.json({
+        reply: fallbackText,
+        suggestedActions,
+        relevantTab,
+        aiModel: "gemini-copilot-fallback"
+      });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `${systemKnowledge}
+
+CONTEXTO ACTUAL DEL USUARIO:
+- Pestaña activa en la pantalla: ${activeTab}
+- Rol del usuario: ${userRole || 'Super Admin Master'}
+- Marca seleccionada: ${brandName || 'RestoBot Gourmet'}
+- Sede seleccionada: ${sedeName || 'Sede Principal (Brickell / Miami)'}
+- Historial reciente de la consulta: ${JSON.stringify(conversationHistory || [])}
+
+PREGUNTA / SOLICITUD DEL USUARIO:
+"${query}"
+
+Por favor genera una respuesta completa, pedagógica y directamente accionable con pasos detallados y buenas prácticas.`
+            }
+          ]
+        }
+      ]
+    });
+
+    const reply = response.text || "He procesado tu consulta. Por favor indícame si requieres detalles adicionales o ejemplos de comandos cURL.";
+
+    res.json({
+      reply,
+      suggestedActions: ["Ver módulo relacionado", "Probar en Sandbox", "Copiar comando cURL", "Consultar Guía Maestra"],
+      relevantTab: activeTab,
+      aiModel: "gemini-2.5-flash"
+    });
+  } catch (err: any) {
+    console.error("Gemini Copilot Error:", err);
+    res.status(500).json({
+      error: "Error en Copiloto IA",
+      details: err.message,
+      fallbackReply: `### 🤖 Asistente RestoBot IA:
+Recibí tu consulta: "${query}". 
+Puedes navegar a la sección de **Guía & Documentación** para consultar el manual paso a paso de los 14 módulos, o al **Laboratorio de Bots** para configurar cartas y sedes.`
+    });
+  }
+});
+
+// ----------------------------------------------------------------------
 // 3. WHATSAPP META CLOUD API WEBHOOKS
 // ----------------------------------------------------------------------
 app.get("/api/webhooks/whatsapp-cloud", (req: Request, res: Response) => {

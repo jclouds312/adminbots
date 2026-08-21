@@ -1,20 +1,24 @@
 import React from 'react';
-import { X, Check, Palette, Sparkles } from 'lucide-react';
+import { X, Check, Palette, Sparkles, Laptop, Sun, Moon } from 'lucide-react';
 import { APP_THEMES } from '../data/themes';
-import { AppThemeConfig, AppThemeId } from '../types';
+import { AppThemeConfig } from '../types';
 
 interface ThemeModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentTheme: AppThemeConfig;
   onSelectTheme: (theme: AppThemeConfig) => void;
+  autoDetectOsTheme?: boolean;
+  onToggleAutoDetectOs?: (enabled: boolean) => void;
 }
 
 export const ThemeModal: React.FC<ThemeModalProps> = ({
   isOpen,
   onClose,
   currentTheme,
-  onSelectTheme
+  onSelectTheme,
+  autoDetectOsTheme = true,
+  onToggleAutoDetectOs
 }) => {
   if (!isOpen) return null;
 
@@ -35,7 +39,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                Selecciona una paleta de color y contraste optimizada para entornos operativos y comerciales.
+                Selecciona una paleta visual optimizada o activa la detección automática según la preferencia de tu sistema operativo.
               </p>
             </div>
           </div>
@@ -47,14 +51,57 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
           </button>
         </div>
 
+        {/* OS Auto-Detect Preference Toggle Card */}
+        {onToggleAutoDetectOs && (
+          <div className="mt-4 p-3.5 rounded-xl bg-gradient-to-r from-slate-950 via-indigo-950/40 to-slate-950 border border-indigo-500/30 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-300">
+                <Laptop className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                  <span>Detección Automática de Sistema Operativo</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-mono">
+                    OS Auto-Sync
+                  </span>
+                </h4>
+                <p className="text-[11px] text-slate-400">
+                  Alterna inteligentemente entre <strong className="text-indigo-300">Dark Slate Pro</strong> y <strong className="text-amber-300">Light Clean Studio</strong> según la configuración de tu dispositivo (Windows, Mac, iOS, Android).
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onToggleAutoDetectOs(!autoDetectOsTheme)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shrink-0 ${
+                autoDetectOsTheme
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-1 ring-emerald-400/50'
+                  : 'bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700'
+              }`}
+            >
+              {autoDetectOsTheme ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Activado</span>
+                </>
+              ) : (
+                <span>Desactivado</span>
+              )}
+            </button>
+          </div>
+        )}
+
         {/* Theme Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-5 max-h-[60vh] overflow-y-auto pr-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-5 max-h-[50vh] overflow-y-auto pr-1">
           {Object.values(APP_THEMES).map((theme) => {
             const isSelected = currentTheme.id === theme.id;
             return (
               <button
                 key={theme.id}
                 onClick={() => {
+                  if (onToggleAutoDetectOs && autoDetectOsTheme) {
+                    onToggleAutoDetectOs(false); // disable OS lock if user manually picked a theme
+                  }
                   onSelectTheme(theme);
                   onClose();
                 }}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Order } from '../types';
 
 export interface UsePreparationThresholdAlertOptions {
@@ -118,10 +118,12 @@ export const usePreparationThresholdAlert = (
   }, []);
 
   // Compute delayed orders
-  const delayedOrders = orders.filter((o) => {
-    const { isOverdue } = getOrderOverdueInfo(o);
-    return isOverdue && !dismissedOrderIds.has(o.pedido_id);
-  });
+  const delayedOrders = useMemo(() => {
+    return orders.filter((o) => {
+      const { isOverdue } = getOrderOverdueInfo(o);
+      return isOverdue && !dismissedOrderIds.has(o.pedido_id);
+    });
+  }, [orders, getOrderOverdueInfo, dismissedOrderIds, currentTime]);
 
   // Check snooze status
   useEffect(() => {

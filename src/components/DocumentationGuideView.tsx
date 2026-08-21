@@ -20,13 +20,9 @@ import {
   Check, 
   ExternalLink, 
   Terminal, 
-  Code, 
-  HelpCircle, 
   Search, 
   Filter, 
-  Share2, 
   Download, 
-  Printer, 
   Play, 
   RefreshCw, 
   Zap, 
@@ -34,14 +30,20 @@ import {
   Smartphone, 
   Cpu, 
   Users, 
-  MessageSquare, 
-  AlertCircle, 
-  Eye, 
+  HelpCircle, 
   Info,
-  CheckCheck
+  Clock,
+  QrCode,
+  Lock,
+  Workflow,
+  Receipt,
+  Truck,
+  MessageSquare,
+  AlertTriangle
 } from 'lucide-react';
 import { NavigationTabId } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { AiSystemCopilotModal } from './AiSystemCopilotModal';
 
 interface DocumentationGuideViewProps {
   onNavigateToTab?: (tab: NavigationTabId) => void;
@@ -66,6 +68,7 @@ export const DocumentationGuideView: React.FC<DocumentationGuideViewProps> = ({
   const [activeSimulatorStep, setActiveSimulatorStep] = useState(1);
   const [simulatedApiResponse, setSimulatedApiResponse] = useState<string | null>(null);
   const [isExecutingSim, setIsExecutingSim] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   // Copy helper
   const handleCopy = (text: string, snippetId: string) => {
@@ -85,7 +88,9 @@ export const DocumentationGuideView: React.FC<DocumentationGuideViewProps> = ({
         setSimulatedApiResponse(JSON.stringify({
           messaging_product: "whatsapp",
           contacts: [{ input: "+13055551234", wa_id: "13055551234" }],
-          messages: [{ id: "wamid.HBgLMTMwNTU1NTEyMzQVAgARGBI5MjQ4QkY4MTJGREU3MjA2M0EA" }]
+          messages: [{ id: "wamid.HBgLMTMwNTU1NTEyMzQVAgARGBI5MjQ4QkY4MTJGREU3MjA2M0EA" }],
+          status: "sent_to_customer",
+          timestamp: new Date().toISOString()
         }, null, 2));
       } else if (type === 'wompi_event') {
         setSimulatedApiResponse(JSON.stringify({
@@ -95,17 +100,26 @@ export const DocumentationGuideView: React.FC<DocumentationGuideViewProps> = ({
               id: "tx_998124_approved",
               reference: "PED-1001-USA",
               status: "APPROVED",
-              amount_in_cents: 4000,
-              currency: "USD"
+              amount_in_cents: 4800,
+              currency: "USD",
+              customer_email: "cliente@restobot.com",
+              payment_method_type: "CARD"
             }
           },
-          sent_at: new Date().toISOString()
+          sent_at: new Date().toISOString(),
+          kds_pushed: true,
+          kds_ticket_id: "TKT-BRICKELL-1001"
         }, null, 2));
       } else {
         setSimulatedApiResponse(JSON.stringify({
           status: "OK",
           message: "Orden transmitida a pantalla KDS de Cocina en 42ms.",
-          ticket_id: "KDS-TKT-8849"
+          ticket_id: "KDS-TKT-8849",
+          kitchen_time_target_mins: 15,
+          kardex_deductions: [
+            { item: "Carne Angus Smash", deducted: "0.4 kg" },
+            { item: "Pan Brioche", deducted: "2 unidades" }
+          ]
         }, null, 2));
       }
       onShowNotification('Respuesta Simulada OK (200)', 'La petición de prueba se ejecutó exitosamente en el sandbox.');
@@ -131,15 +145,15 @@ RestoBot IA es la plataforma integral de automatización para restaurantes en US
 
 ## 3. INTEGRACIÓN META WHATSAPP CLOUD API
 - Webhook URL: https://tu-dominio.com/api/webhook/meta
-- Verify Token: RESTOBOT_VERIFY_2026
+- Verify Token: RESTOBOT_VERIFY_TOKEN_2026
 - Eventos: messages, messaging_postbacks, message_deliveries.
 
-## 4. MÓDULOS DE LA PLATAFORMA
+## 4. MÓDULOS DE LA PLATAFORMA (14 MÓDULOS)
 - Bot WhatsApp & Carrito (chat_bot)
 - Laboratorio de Bots & Menús (bot_laboratory)
 - KDS Cocina en Vivo (kds_cocina)
 - Tablero Kanban de Pedidos (kanban_pedidos)
-- Analíticas & Ventas Recharts (analytics)
+- Analíticas & Ventas D3 (analytics)
 - Franquicias & Multi-Sedes (multi_sedes)
 - Landing Ventas USA (landing_usa)
 - Plan Maestro 18 Días (plan_18_dias)
@@ -162,16 +176,18 @@ Generado automáticamente desde la consola administrativa.`;
     onShowNotification('Manual Exportado', 'Archivo Markdown descargado exitosamente en tu dispositivo.');
   };
 
-  // Modules Data catalog
+  // Modules Data catalog with colorful themes and rich images
   const modulesCatalog = [
     {
       id: 'chat_bot' as NavigationTabId,
-      name: 'Bot WhatsApp & Carrito',
-      badge: 'LIVE IA',
+      name: 'Bot WhatsApp & Carrito IA',
+      badge: 'LIVE GEMINI',
       color: 'emerald',
-      gradient: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/40 text-emerald-400',
+      gradient: 'from-emerald-950/80 via-teal-950/40 to-slate-900 border-emerald-500/40 text-emerald-400',
+      tagBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
       icon: Bot,
-      summary: 'Simulador en tiempo real de chat con IA (Gemini), asistente conversacional, toma de pedidos en lenguaje natural, carrito interactivo y generación de links de pago Wompi/Stripe.',
+      image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&auto=format&fit=crop&q=80',
+      summary: 'Simulador en tiempo real de chat con IA (Gemini 2.5), asistente conversacional, toma de pedidos en lenguaje natural, carrito interactivo y links de pago Wompi/Stripe.',
       features: [
         'Procesamiento de lenguaje natural (NLP) con Gemini 2.5 Flash / Pro.',
         'Cálculo de subtotal, costo de envío por zona y total consolidado.',
@@ -182,10 +198,12 @@ Generado automáticamente desde la consola administrativa.`;
     {
       id: 'bot_laboratory' as NavigationTabId,
       name: 'Laboratorio de Bots & Menús',
-      badge: 'STUDIO & MENÚS',
+      badge: 'STUDIO & CARTAS',
       color: 'purple',
-      gradient: 'from-purple-500/20 to-pink-500/10 border-purple-500/40 text-purple-400',
+      gradient: 'from-purple-950/80 via-pink-950/40 to-slate-900 border-purple-500/40 text-purple-400',
+      tagBg: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
       icon: Sliders,
+      image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=500&auto=format&fit=crop&q=80',
       summary: 'Estudio visual completo para crear nuevas marcas de restaurantes, gestionar múltiples sedes, editar platos con imágenes HD y afinar el prompt maestro de IA.',
       features: [
         'Creador de restaurantes y sedes con monedas independientes (USD / COP).',
@@ -196,12 +214,14 @@ Generado automáticamente desde la consola administrativa.`;
     },
     {
       id: 'kds_cocina' as NavigationTabId,
-      name: 'KDS Cocina (Kitchen Display)',
-      badge: 'EN VIVO',
+      name: 'KDS Cocina en Tiempo Real',
+      badge: 'COCINA EN VIVO',
       color: 'amber',
-      gradient: 'from-amber-500/20 to-orange-500/10 border-amber-500/40 text-amber-400',
+      gradient: 'from-amber-950/80 via-orange-950/40 to-slate-900 border-amber-500/40 text-amber-400',
+      tagBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       icon: ChefHat,
-      summary: 'Pantalla de comandas para cocineros y chefs en tiempo real con temporizadores de preparación, alertas visuales y botones para marcar pedidos como listos.',
+      image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=500&auto=format&fit=crop&q=80',
+      summary: 'Pantalla de comandas para cocineros y chefs en tiempo real con temporizadores de preparación, alertas visuales de color y botones para marcar pedidos como listos.',
       features: [
         'Visualización de ingredientes, extras y observaciones de los clientes.',
         'Cronómetro regresivo de cocción con colores por urgencia (Verde, Amarillo, Rojo).',
@@ -212,10 +232,12 @@ Generado automáticamente desde la consola administrativa.`;
     {
       id: 'kanban_pedidos' as NavigationTabId,
       name: 'Tablero Kanban de Pedidos',
-      badge: 'PIPELINE',
+      badge: 'PIPELINE 5 FASES',
       color: 'indigo',
-      gradient: 'from-indigo-500/20 to-blue-500/10 border-indigo-500/40 text-indigo-400',
+      gradient: 'from-indigo-950/80 via-blue-950/40 to-slate-900 border-indigo-500/40 text-indigo-400',
+      tagBg: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
       icon: Layers,
+      image: 'https://images.unsplash.com/photo-1526367790999-0150786686a2?w=500&auto=format&fit=crop&q=80',
       summary: 'Tablero visual de seguimiento de pedidos ordenados por columnas de estado: Creado, En Cocina, Listo, En Camino y Entregado.',
       features: [
         'Arrastrar y soltar pedidos entre columnas de estado.',
@@ -226,26 +248,30 @@ Generado automáticamente desde la consola administrativa.`;
     },
     {
       id: 'analytics' as NavigationTabId,
-      name: 'Analíticas & Ventas (Recharts)',
-      badge: 'MÉTRICAS',
+      name: 'Analíticas & Ventas D3.js',
+      badge: 'D3 VISUAL & ROI',
       color: 'cyan',
-      gradient: 'from-cyan-500/20 to-sky-500/10 border-cyan-500/40 text-cyan-400',
+      gradient: 'from-cyan-950/80 via-sky-950/40 to-slate-900 border-cyan-500/40 text-cyan-400',
+      tagBg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
       icon: TrendingUp,
-      summary: 'Dashboard interactivo de métricas financieras con gráficos de ventas brutas, horas pico de pedidos, platos más vendidos y ahorro de comisiones.',
+      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&auto=format&fit=crop&q=80',
+      summary: 'Dashboard interactivo con curvas spline D3.js semanales, donut de distribución por sedes, horas pico de pedidos y cálculo del 30% ahorrado vs DoorDash / UberEats.',
       features: [
-        'Gráficos de barras y líneas en tiempo real renderizados con Recharts.',
+        'Curva spline D3.js interactiva semanal con comparativa de semana previa.',
+        'Gráfico donut D3.js animado con ranking de ingresos por sucursal.',
         'Cálculo exacto del 30% ahorrado vs DoorDash, UberEats y Rappi.',
-        'Sincronización directa de métricas hacia Google Sheets y Google Drive.',
-        'Filtros por rango de fechas (Hoy, 7 Días, Mes, Año).'
+        'Sincronización directa de métricas hacia Google Sheets y Google Drive.'
       ]
     },
     {
       id: 'multi_sedes' as NavigationTabId,
-      name: 'Franquicias, Sedes & QR HD',
-      badge: 'QR HD',
+      name: 'Franquicias & Códigos QR HD',
+      badge: 'QR VECTORIAL HD',
       color: 'violet',
-      gradient: 'from-violet-500/20 to-fuchsia-500/10 border-violet-500/40 text-violet-400',
+      gradient: 'from-violet-950/80 via-fuchsia-950/40 to-slate-900 border-violet-500/40 text-violet-400',
+      tagBg: 'bg-violet-500/20 text-violet-300 border-violet-500/40',
       icon: Store,
+      image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=80',
       summary: 'Gestión centralizada de marcas y cadenas con generación de códigos QR de alta resolución listos para imprimir en mesas, empaques y pendones.',
       features: [
         'Generador de QR directo hacia WhatsApp con mensaje predeterminado.',
@@ -257,10 +283,12 @@ Generado automáticamente desde la consola administrativa.`;
     {
       id: 'landing_usa' as NavigationTabId,
       name: 'Landing Ventas USA (0% Fees)',
-      badge: '0% FEES',
+      badge: '0% COMISIONES',
       color: 'emerald',
-      gradient: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/40 text-emerald-400',
+      gradient: 'from-teal-950/80 via-emerald-950/40 to-slate-900 border-teal-500/40 text-teal-400',
+      tagBg: 'bg-teal-500/20 text-teal-300 border-teal-500/40',
       icon: Sparkles,
+      image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80',
       summary: 'Página de ventas y captación orientada al mercado de USA y cadenas de restaurantes, con calculadora de ROI interactiva y testimonios.',
       features: [
         'Calculadora de ahorro anual en dólares al eliminar comisiones de terceros.',
@@ -272,10 +300,12 @@ Generado automáticamente desde la consola administrativa.`;
     {
       id: 'plan_18_dias' as NavigationTabId,
       name: 'Plan Maestro de 18 Días',
-      badge: 'ROADMAP',
+      badge: 'ROADMAP ALEJANDRO',
       color: 'amber',
-      gradient: 'from-amber-500/20 to-yellow-500/10 border-amber-500/40 text-amber-400',
+      gradient: 'from-amber-950/80 via-yellow-950/40 to-slate-900 border-amber-500/40 text-amber-400',
+      tagBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       icon: TrendingUp,
+      image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500&auto=format&fit=crop&q=80',
       summary: 'Roadmap estructurado día por día para el despliegue comercial y técnico de la red de restaurantes junto con Alejandro y el equipo LATAM.',
       features: [
         'Checklist interactivo de hitos cumplidos y pendientes.',
@@ -286,11 +316,13 @@ Generado automáticamente desde la consola administrativa.`;
     },
     {
       id: 'workspace_hub' as NavigationTabId,
-      name: 'Google Workspace Hub',
-      badge: 'DRIVE / SHEETS',
+      name: 'Google Workspace Cloud Hub',
+      badge: 'DRIVE / SHEETS / GMAIL',
       color: 'red',
-      gradient: 'from-red-500/20 to-emerald-500/10 border-red-500/40 text-red-400',
+      gradient: 'from-red-950/80 via-orange-950/40 to-slate-900 border-red-500/40 text-red-400',
+      tagBg: 'bg-red-500/20 text-red-300 border-red-500/40',
       icon: FileSpreadsheet,
+      image: 'https://images.unsplash.com/photo-1581291518655-9523c932dede?w=500&auto=format&fit=crop&q=80',
       summary: 'Integración bidireccional con Google Sheets, Google Drive, Google Contacts y Gmail para respaldar datos y automatizar reportes.',
       features: [
         'Exportación instantánea de órdenes a hojas de cálculo maestras.',
@@ -302,10 +334,12 @@ Generado automáticamente desde la consola administrativa.`;
     {
       id: 'kardex_inventario' as NavigationTabId,
       name: 'Kardex & Recetas de Insumos',
-      badge: 'STOCK',
+      badge: 'STOCK AUTOMÁTICO',
       color: 'orange',
-      gradient: 'from-orange-500/20 to-amber-500/10 border-orange-500/40 text-orange-400',
+      gradient: 'from-orange-950/80 via-amber-950/40 to-slate-900 border-orange-500/40 text-orange-400',
+      tagBg: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
       icon: Flame,
+      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=80',
       summary: 'Control de inventario en tiempo real con descuento automático de ingredientes (carne, pan, salsas, quesos) cada vez que una comanda entra a cocina.',
       features: [
         'Definición de recetas estándar por cada plato del menú.',
@@ -317,10 +351,12 @@ Generado automáticamente desde la consola administrativa.`;
     {
       id: 'n8n_workflows' as NavigationTabId,
       name: 'Workflows Automatizados n8n',
-      badge: 'ORQUESTADOR',
+      badge: 'ORQUESTADOR BACKEND',
       color: 'rose',
-      gradient: 'from-rose-500/20 to-pink-500/10 border-rose-500/40 text-rose-400',
+      gradient: 'from-rose-950/80 via-pink-950/40 to-slate-900 border-rose-500/40 text-rose-400',
+      tagBg: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
       icon: FolderSync,
+      image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&auto=format&fit=crop&q=80',
       summary: 'Centro de orquestación de flujos visuales que conectan Meta WhatsApp Cloud API, pasarelas Wompi/Stripe, base de datos y Google Workspace.',
       features: [
         'Diagrama visual de escenarios activos y webhooks entrantes.',
@@ -332,10 +368,12 @@ Generado automáticamente desde la consola administrativa.`;
     {
       id: 'api_catalog' as NavigationTabId,
       name: 'Catálogo de APIs & Endpoints',
-      badge: 'DOCS / SWAGGER',
+      badge: 'OPENAPI / REST',
       color: 'sky',
-      gradient: 'from-sky-500/20 to-blue-500/10 border-sky-500/40 text-sky-400',
+      gradient: 'from-sky-950/80 via-blue-950/40 to-slate-900 border-sky-500/40 text-sky-400',
+      tagBg: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
       icon: Globe,
+      image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=500&auto=format&fit=crop&q=80',
       summary: 'Documentación OpenAPI completa con especificación de endpoints REST, esquemas de petición/respuesta y ejemplos en cURL, Python y Node.js.',
       features: [
         'Endpoints para órdenes, menús, sedes, pagos y webhooks.',
@@ -347,10 +385,12 @@ Generado automáticamente desde la consola administrativa.`;
     {
       id: 'webhook_logs' as NavigationTabId,
       name: 'Logs de Webhooks en Vivo',
-      badge: 'AUDITORÍA',
+      badge: 'AUDITORÍA HTTP',
       color: 'teal',
-      gradient: 'from-teal-500/20 to-emerald-500/10 border-teal-500/40 text-teal-400',
+      gradient: 'from-teal-950/80 via-emerald-950/40 to-slate-900 border-teal-500/40 text-teal-400',
+      tagBg: 'bg-teal-500/20 text-teal-300 border-teal-500/40',
       icon: ShieldCheck,
+      image: 'https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=500&auto=format&fit=crop&q=80',
       summary: 'Monitor en vivo estilo consola de peticiones HTTP entrantes y salientes de Meta, Wompi, Stripe y KDS para auditoría y depuración en tiempo real.',
       features: [
         'Filtrado por código de estado (200 OK, 400 Bad Request, 500 Error).',
@@ -361,11 +401,13 @@ Generado automáticamente desde la consola administrativa.`;
     },
     {
       id: 'config_vault' as NavigationTabId,
-      name: 'Bóveda de Configuración (Config Vault)',
-      badge: 'AES-256',
+      name: 'Bóveda de Configuración Segura',
+      badge: 'AES-256 VAULT',
       color: 'amber',
-      gradient: 'from-amber-500/20 to-zinc-500/10 border-amber-500/40 text-amber-400',
+      gradient: 'from-amber-950/80 via-zinc-950/40 to-slate-900 border-amber-500/40 text-amber-400',
+      tagBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       icon: Key,
+      image: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=500&auto=format&fit=crop&q=80',
       summary: 'Almacén seguro de credenciales y variables de entorno cifradas para Meta Access Tokens, Wompi Integrity Keys, Stripe Keys y Google OAuth IDs.',
       features: [
         'Ocultamiento y revelación segura de tokens con autenticación de administrador.',
@@ -380,9 +422,9 @@ Generado automáticamente desde la consola administrativa.`;
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 space-y-6">
       
       {/* HEADER: COMPREHENSIVE DOCUMENTATION & OPERATIONAL MANUAL */}
-      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-indigo-950/70 to-slate-950 border border-indigo-500/30 shadow-2xl shadow-indigo-950/40">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-8 w-48 h-48 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-indigo-950/80 to-slate-950 border border-indigo-500/40 shadow-2xl shadow-indigo-950/50">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 -mb-10 w-64 h-64 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-3xl">
@@ -402,12 +444,21 @@ Generado automáticamente desde la consola administrativa.`;
 
           {/* Quick Action Buttons */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {/* AI Assistant Trigger Button */}
+            <button
+              onClick={() => setIsCopilotOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 hover:from-emerald-400 hover:to-indigo-500 text-white font-black text-xs shadow-lg shadow-emerald-500/25 transition-all transform hover:scale-102 active:scale-95 border border-emerald-400/40"
+            >
+              <Sparkles className="w-4 h-4 text-emerald-200 animate-pulse" />
+              <span>Preguntar a Asistente IA</span>
+            </button>
+
             <button
               onClick={() => onNavigateToTab('bot_laboratory')}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs shadow-lg shadow-purple-500/25 transition-all transform hover:scale-102 active:scale-95 border border-pink-400/40"
             >
               <Sliders className="w-4 h-4 text-pink-200" />
-              <span>Ir al Laboratorio de Bots</span>
+              <span>Ir al Laboratorio</span>
             </button>
 
             <button
@@ -460,7 +511,7 @@ Generado automáticamente desde la consola administrativa.`;
         </div>
       </div>
 
-      {/* HORIZONTAL TABS SELECTOR: COLOR-CODED AND TACTILE */}
+      {/* HORIZONTAL TABS SELECTOR: MULTI-COLORED AND TACTILE */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {[
           { id: 'quick_start', label: '🚀 1. Guía Rápida & Admin', color: 'emerald' },
@@ -496,62 +547,80 @@ Generado automáticamente desde la consola administrativa.`;
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             
             {/* Card 1: Platform Overview */}
-            <div className="rounded-2xl p-5 bg-slate-900/90 border border-emerald-500/30 shadow-lg relative overflow-hidden">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
-                  <Bot className="w-5 h-5" />
+            <div className="rounded-3xl p-6 bg-gradient-to-br from-emerald-950/80 via-teal-950/30 to-slate-900 border border-emerald-500/40 shadow-xl relative overflow-hidden flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <Bot className="w-6 h-6" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    0% Comisiones
+                  </span>
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-white">Objetivo de la Plataforma</h4>
-                  <p className="text-[11px] text-emerald-400 font-bold">0% Comisiones • 100% Control</p>
+                  <h4 className="text-base font-black text-white">Objetivo de la Plataforma</h4>
+                  <p className="text-xs text-emerald-400 font-bold">100% Control de Clientes e Ingresos</p>
                 </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Reemplaza comisiones abusivas del 30% con bots inteligentes de WhatsApp conectados en tiempo real a cocina KDS, inventario Kardex y Google Workspace.
+                </p>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Reemplaza intermediarios caros con bots inteligentes conectados directamente a WhatsApp, comandas instantáneas en cocina (KDS) y reportes financieros consolidados.
-              </p>
-              <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] font-bold text-slate-400">
-                <span>Tiempo de Setup: <strong className="text-white">~5 minutos</strong></span>
-                <span className="text-emerald-400">Lista para operar</span>
+
+              <div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-bold text-slate-400">
+                <span>Setup: <strong className="text-white">~5 minutos</strong></span>
+                <span className="text-emerald-400">Operación 24/7</span>
               </div>
             </div>
 
             {/* Card 2: Role Management */}
-            <div className="rounded-2xl p-5 bg-slate-900/90 border border-indigo-500/30 shadow-lg relative overflow-hidden">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
-                  <Users className="w-5 h-5" />
+            <div className="rounded-3xl p-6 bg-gradient-to-br from-indigo-950/80 via-purple-950/30 to-slate-900 border border-indigo-500/40 shadow-xl relative overflow-hidden flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                    <Users className="w-6 h-6" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                    4 Perfiles RBAC
+                  </span>
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-white">Gestión de Roles (RBAC)</h4>
-                  <p className="text-[11px] text-indigo-400 font-bold">4 Perfiles de Usuario</p>
+                  <h4 className="text-base font-black text-white">Gestión de Roles Granulares</h4>
+                  <p className="text-xs text-indigo-400 font-bold">Seguridad y Permisos por Perfil</p>
                 </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Conmuta perfiles en la barra superior: <strong>Super Admin</strong> (control total), <strong>DevOps</strong> (APIs y webhooks), <strong>Gerente Sede</strong> (KDS e inventario) y <strong>Capitán Reparto</strong> (despachos).
+                </p>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Alterna en la barra superior entre: <strong>Super Admin Master</strong> (acceso total), <strong>DevOps Engineer</strong> (APIs & logs), <strong>Gerente Sede</strong> (KDS & inventario) y <strong>Capitán Reparto</strong> (despachos).
-              </p>
-              <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] font-bold text-slate-400">
-                <span>Permisos granulares</span>
+
+              <div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-bold text-slate-400">
+                <span>Permisos asignados</span>
                 <span className="text-indigo-400">Selector en Navbar</span>
               </div>
             </div>
 
             {/* Card 3: Currency & Google Sync */}
-            <div className="rounded-2xl p-5 bg-slate-900/90 border border-amber-500/30 shadow-lg relative overflow-hidden">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
-                  <DollarSign className="w-5 h-5" />
+            <div className="rounded-3xl p-6 bg-gradient-to-br from-amber-950/80 via-orange-950/30 to-slate-900 border border-amber-500/40 shadow-xl relative overflow-hidden flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    <DollarSign className="w-6 h-6" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    USD / COP
+                  </span>
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-white">Moneda & Google Workspace</h4>
-                  <p className="text-[11px] text-amber-400 font-bold">USD ($) & COP ($) / Sheets</p>
+                  <h4 className="text-base font-black text-white">Multi-Moneda & Google Workspace</h4>
+                  <p className="text-xs text-amber-400 font-bold">Sincronización Continua</p>
                 </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Alterna entre dólares (USD) para USA y pesos (COP) para Colombia. Sincroniza órdenes, cierres contables y menús a Google Sheets y Google Drive con 1 clic.
+                </p>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Cambia la moneda global con un solo clic en la barra superior. Sincroniza todas las ventas y datos de clientes hacia Google Sheets y Google Drive de manera automática.
-              </p>
-              <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] font-bold text-slate-400">
-                <span>Auto-conversión activa</span>
-                <span className="text-amber-400">Sheets Sync 24/7</span>
+
+              <div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-bold text-slate-400">
+                <span>Auto-conversión</span>
+                <span className="text-amber-400">Sheets Sync</span>
               </div>
             </div>
 
@@ -559,10 +628,19 @@ Generado automáticamente desde la consola administrativa.`;
 
           {/* Step-by-Step Administrative Workflow */}
           <div className="rounded-3xl p-6 bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-            <h3 className="text-base font-black text-white flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-400" />
-              <span>Flujo de Trabajo Diario para Administradores</span>
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-400" />
+                <span>Flujo de Trabajo Diario para Administradores</span>
+              </h3>
+              <button
+                onClick={() => setIsCopilotOpen(true)}
+                className="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Preguntar al Asistente IA</span>
+              </button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
               {[
@@ -571,33 +649,37 @@ Generado automáticamente desde la consola administrativa.`;
                   title: 'Revisar Pedidos en Vivo',
                   desc: 'Abre el Tablero Kanban o el Simulador de WhatsApp para monitorear órdenes entrantes y pagos confirmados.',
                   tab: 'kanban_pedidos' as NavigationTabId,
-                  badge: 'Operación'
+                  badge: 'Operación',
+                  gradient: 'border-emerald-500/30'
                 },
                 {
                   step: '02',
                   title: 'Monitorear Cocina KDS',
                   desc: 'Verifica los tiempos de preparación en la pantalla de cocina para asegurar entregas en menos de 30 minutos.',
                   tab: 'kds_cocina' as NavigationTabId,
-                  badge: 'Cocina'
+                  badge: 'Cocina',
+                  gradient: 'border-amber-500/30'
                 },
                 {
                   step: '03',
                   title: 'Ajustar Menú & Precios',
                   desc: 'Usa el Laboratorio de Bots para añadir platos de temporada, ajustar inventario o pausar productos agotados.',
                   tab: 'bot_laboratory' as NavigationTabId,
-                  badge: 'Studio'
+                  badge: 'Studio',
+                  gradient: 'border-purple-500/30'
                 },
                 {
                   step: '04',
                   title: 'Auditar Métricas & Sheets',
-                  desc: 'Revisa las ventas del día en Analíticas y pulsa "Sincronizar a Google Sheets" para el cierre contable.',
+                  desc: 'Revisa las ventas del día en Analíticas D3 y pulsa "Sincronizar a Google Sheets" para el cierre contable.',
                   tab: 'analytics' as NavigationTabId,
-                  badge: 'Finanzas'
+                  badge: 'Finanzas',
+                  gradient: 'border-cyan-500/30'
                 }
               ].map((item) => (
                 <div 
                   key={item.step}
-                  className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/90 hover:border-indigo-500/40 transition-all group flex flex-col justify-between"
+                  className={`p-4 rounded-2xl bg-slate-950/80 border ${item.gradient} hover:border-indigo-500/60 transition-all group flex flex-col justify-between shadow-lg`}
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -631,8 +713,8 @@ Generado automáticamente desde la consola administrativa.`;
       {/* TAB CONTENT 2: BOT CREATION MASTER GUIDE */}
       {activeDocTab === 'bot_creation' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="rounded-3xl p-6 bg-slate-900/90 border border-purple-500/30 shadow-xl space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="rounded-3xl p-6 bg-gradient-to-br from-purple-950/70 via-slate-900 to-slate-950 border border-purple-500/40 shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
                   <Sliders className="w-5 h-5 text-pink-400" />
@@ -643,13 +725,23 @@ Generado automáticamente desde la consola administrativa.`;
                 </p>
               </div>
 
-              <button
-                onClick={() => onNavigateToTab('bot_laboratory')}
-                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow-md shadow-purple-600/30 transition-all flex items-center gap-2"
-              >
-                <Sliders className="w-4 h-4" />
-                <span>Abrir Studio de Creación</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsCopilotOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-purple-200 text-xs font-black border border-purple-500/40 transition-all flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-pink-300" />
+                  <span>Ayuda IA</span>
+                </button>
+
+                <button
+                  onClick={() => onNavigateToTab('bot_laboratory')}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow-md shadow-purple-600/30 transition-all flex items-center gap-2"
+                >
+                  <Sliders className="w-4 h-4" />
+                  <span>Abrir Studio</span>
+                </button>
+              </div>
             </div>
 
             {/* Interactive Step Navigator */}
@@ -663,9 +755,9 @@ Generado automáticamente desde la consola administrativa.`;
                 <button
                   key={step.num}
                   onClick={() => setActiveSimulatorStep(step.num)}
-                  className={`p-3 rounded-2xl text-left transition-all border ${
+                  className={`p-3.5 rounded-2xl text-left transition-all border ${
                     activeSimulatorStep === step.num
-                      ? 'bg-purple-950/70 border-pink-400/60 shadow-lg shadow-purple-900/30 ring-1 ring-pink-400/40'
+                      ? 'bg-purple-950/90 border-pink-400/60 shadow-lg shadow-purple-900/30 ring-1 ring-pink-400/40'
                       : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
                   }`}
                 >
@@ -684,7 +776,7 @@ Generado automáticamente desde la consola administrativa.`;
 
             {/* Step 1 Details */}
             {activeSimulatorStep === 1 && (
-              <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 animate-in fade-in">
+              <div className="p-5 rounded-2xl bg-slate-950/90 border border-purple-500/30 space-y-4 animate-in fade-in">
                 <div className="flex items-center gap-2 text-pink-400 font-black text-sm">
                   <Store className="w-4 h-4" />
                   <span>Paso 1: Dar de Alta la Franquicia o Restaurante</span>
@@ -693,11 +785,11 @@ Generado automáticamente desde la consola administrativa.`;
                   En la pestaña <strong>"1. Restaurantes & Sedes"</strong> del Laboratorio de Bots, pulsa el botón <strong>"+ Crear Restaurante"</strong> e ingresa los datos de identidad corporativa:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                     <span className="font-bold text-white">Nombre & Tipo de Cocina</span>
                     <p className="text-slate-400">Ejemplo: "The Smash Spot USA" • Categoría: "Burgers & Grill Gourmet".</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                  <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                     <span className="font-bold text-white">País & Moneda Principal</span>
                     <p className="text-slate-400">Selecciona <strong>USA (USD)</strong> para franquicias en Florida o <strong>Colombia (COP)</strong> para sedes en Bogotá/Medellín.</p>
                   </div>
@@ -707,7 +799,7 @@ Generado automáticamente desde la consola administrativa.`;
 
             {/* Step 2 Details */}
             {activeSimulatorStep === 2 && (
-              <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 animate-in fade-in">
+              <div className="p-5 rounded-2xl bg-slate-950/90 border border-purple-500/30 space-y-4 animate-in fade-in">
                 <div className="flex items-center gap-2 text-purple-400 font-black text-sm">
                   <Smartphone className="w-4 h-4" />
                   <span>Paso 2: Registrar la Sede Física & Teléfono WhatsApp E.164</span>
@@ -715,7 +807,7 @@ Generado automáticamente desde la consola administrativa.`;
                 <p className="text-xs text-slate-300 leading-relaxed">
                   Cada sede tiene su propio número de WhatsApp dedicado y su radio de cobertura para domicilios:
                 </p>
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 font-mono text-xs text-emerald-300 space-y-1">
+                <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 font-mono text-xs text-emerald-300 space-y-1">
                   <div className="text-slate-400">// Formato internacional E.164 obligatorio:</div>
                   <div>USA: +1 (305) 555-0199  (Miami, FL)</div>
                   <div>COL: +57 (310) 555-0188 (Bogotá, DC)</div>
@@ -727,7 +819,7 @@ Generado automáticamente desde la consola administrativa.`;
 
             {/* Step 3 Details */}
             {activeSimulatorStep === 3 && (
-              <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 animate-in fade-in">
+              <div className="p-5 rounded-2xl bg-slate-950/90 border border-purple-500/30 space-y-4 animate-in fade-in">
                 <div className="flex items-center gap-2 text-pink-400 font-black text-sm">
                   <ChefHat className="w-4 h-4" />
                   <span>Paso 3: Diseñar el Menú con Cards Visuales y Fotos HD</span>
@@ -735,12 +827,30 @@ Generado automáticamente desde la consola administrativa.`;
                 <p className="text-xs text-slate-300 leading-relaxed">
                   En la pestaña <strong>"2. Menú & Cards Visuales"</strong> puedes añadir platos con fotos prémium predefinidas (Hamburguesas, Pizzas, Tacos, Bowls, Bebidas y Postres), etiquetas como <em>"Popular"</em> o <em>"Chef Pick"</em>, e ingredientes detallados para el cálculo de Kardex.
                 </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                  <div className="rounded-xl overflow-hidden border border-slate-800 relative group">
+                    <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&auto=format&fit=crop&q=80" alt="Smash Burger" className="w-full h-24 object-cover" />
+                    <div className="p-2 bg-slate-900 text-[11px] font-bold text-white">Smash Burger</div>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-slate-800 relative group">
+                    <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300&auto=format&fit=crop&q=80" alt="Artisan Pizza" className="w-full h-24 object-cover" />
+                    <div className="p-2 bg-slate-900 text-[11px] font-bold text-white">Pizza Artesanal</div>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-slate-800 relative group">
+                    <img src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=300&auto=format&fit=crop&q=80" alt="Tacos" className="w-full h-24 object-cover" />
+                    <div className="p-2 bg-slate-900 text-[11px] font-bold text-white">Tacos Birria</div>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-slate-800 relative group">
+                    <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300&auto=format&fit=crop&q=80" alt="Bakery" className="w-full h-24 object-cover" />
+                    <div className="p-2 bg-slate-900 text-[11px] font-bold text-white">Pandebonos & Café</div>
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Step 4 Details */}
             {activeSimulatorStep === 4 && (
-              <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4 animate-in fade-in">
+              <div className="p-5 rounded-2xl bg-slate-950/90 border border-purple-500/30 space-y-4 animate-in fade-in">
                 <div className="flex items-center gap-2 text-indigo-400 font-black text-sm">
                   <Cpu className="w-4 h-4" />
                   <span>Paso 4: Afinamiento de Prompts de IA Gemini & Métodos de Pago</span>
@@ -758,56 +868,66 @@ Generado automáticamente desde la consola administrativa.`;
       {/* TAB CONTENT 3: TESTING & SANDBOX GUIDE */}
       {activeDocTab === 'testing_sandbox' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="rounded-3xl p-6 bg-slate-900/90 border border-cyan-500/30 shadow-xl space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="rounded-3xl p-6 bg-gradient-to-br from-cyan-950/70 via-slate-900 to-slate-950 border border-cyan-500/40 shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
                   <Play className="w-5 h-5 text-cyan-400" />
                   <span>Testing en Vivo & Simulación de Pedidos en Sandbox</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Cómo comprobar el flujo completo de compra sin gastar dinero real ni enviar mensajes de WhatsApp de cobro.
+                  Comprueba el flujo completo de compra sin gastar dinero real ni enviar mensajes de WhatsApp de cobro.
                 </p>
               </div>
 
-              <button
-                onClick={() => onNavigateToTab('chat_bot')}
-                className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black shadow-md shadow-cyan-600/30 transition-all flex items-center gap-2"
-              >
-                <Bot className="w-4 h-4" />
-                <span>Abrir Simulador de WhatsApp</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsCopilotOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-cyan-900/60 hover:bg-cyan-800 text-cyan-200 text-xs font-black border border-cyan-500/40 transition-all flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
+                  <span>Ayuda IA</span>
+                </button>
+
+                <button
+                  onClick={() => onNavigateToTab('chat_bot')}
+                  className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black shadow-md shadow-cyan-600/30 transition-all flex items-center gap-2"
+                >
+                  <Bot className="w-4 h-4" />
+                  <span>Abrir Simulador</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
-                <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">
+              <div className="p-5 rounded-2xl bg-slate-950/80 border border-cyan-500/30 space-y-3 shadow-lg">
+                <div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-black text-sm border border-cyan-500/30">
                   1
                 </div>
                 <h5 className="text-sm font-bold text-white">Chatear con el Bot IA</h5>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-slate-300 leading-relaxed">
                   Escribe mensajes como: <em>"Quiero pedir 2 Double Smash Burgers y papas trufadas para entrega en Brickell"</em>. El bot entenderá los platos, cantidades y dirección automáticamente.
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
+              <div className="p-5 rounded-2xl bg-slate-950/80 border border-indigo-500/30 space-y-3 shadow-lg">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-black text-sm border border-indigo-500/30">
                   2
                 </div>
                 <h5 className="text-sm font-bold text-white">Simular Pago Wompi/Stripe</h5>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-slate-300 leading-relaxed">
                   Pulsa el botón de <strong>"Pagar Pedido (Simular Aprobación)"</strong> en el carrito interactivo. El sistema cambiará el estado de la transacción a <span className="text-emerald-400 font-bold">PAGADO</span> en 0.2 segundos.
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">
+              <div className="p-5 rounded-2xl bg-slate-950/80 border border-amber-500/30 space-y-3 shadow-lg">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-sm border border-amber-500/30">
                   3
                 </div>
                 <h5 className="text-sm font-bold text-white">Recepción en KDS Cocina</h5>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Abre la pestaña de <strong>KDS Cocina</strong> y verás aparecer la nueva comanda con temporizador activo, sonido de campana y desglose de ingredientes.
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Abre la pestaña de <strong>KDS Cocina</strong> y verás aparecer la nueva comanda con temporizador activo, sonido de campana y descuento automático en el inventario Kardex.
                 </p>
               </div>
 
@@ -819,14 +939,14 @@ Generado automáticamente desde la consola administrativa.`;
       {/* TAB CONTENT 4: META CLOUD API & PRODUCTION DEPLOYMENT */}
       {activeDocTab === 'meta_deployment' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="rounded-3xl p-6 bg-slate-900/90 border border-amber-500/30 shadow-xl space-y-6">
+          <div className="rounded-3xl p-6 bg-gradient-to-br from-amber-950/70 via-slate-900 to-slate-950 border border-amber-500/40 shadow-xl space-y-6">
             <h3 className="text-lg font-black text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-amber-400" />
               <span>Despliegue a Producción: Meta Cloud API WABA & Webhooks</span>
             </h3>
 
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+              <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
                     Configuración de Webhook en Meta Developers
@@ -835,15 +955,15 @@ Generado automáticamente desde la consola administrativa.`;
                     onClick={() => handleCopy('https://tu-dominio.com/api/webhook/meta', 'webhook_url')}
                     className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-white transition-colors"
                   >
-                    {copiedSnippet === 'webhook_url' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedSnippet === 'webhook_url' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
                     <span>{copiedSnippet === 'webhook_url' ? 'Copiado' : 'Copiar URL'}</span>
                   </button>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-900 font-mono text-xs text-emerald-300">
+                <div className="p-4 rounded-xl bg-slate-900 font-mono text-xs text-emerald-300">
                   Callback URL: https://tu-dominio.com/api/webhook/meta<br />
                   Verify Token: RESTOBOT_VERIFY_TOKEN_2026
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-300">
                   Suscríbete a los campos obligatorios en el panel de Meta: <code>messages</code>, <code>messaging_postbacks</code> y <code>message_deliveries</code>.
                 </p>
               </div>
@@ -855,19 +975,27 @@ Generado automáticamente desde la consola administrativa.`;
       {/* TAB CONTENT 5: 14 MODULES DETAILED MANUAL */}
       {activeDocTab === 'modules_manual' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="text-lg font-black text-white flex items-center gap-2">
                 <Layers className="w-5 h-5 text-indigo-400" />
-                <span>Manual Exhaustivo de los 14 Módulos del Sistema</span>
+                <span>Manual Exhaustivo de los 14 Módulos de la Plataforma</span>
               </h3>
               <p className="text-xs text-slate-400 mt-1">
                 Haz clic en cualquier tarjeta para abrir directamente el módulo correspondiente en la plataforma.
               </p>
             </div>
+
+            <button
+              onClick={() => setIsCopilotOpen(true)}
+              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-2 self-start sm:self-auto"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Preguntar al Asistente IA</span>
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {modulesCatalog
               .filter(m => searchQuery === '' || m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.summary.toLowerCase().includes(searchQuery.toLowerCase()))
               .map((mod) => {
@@ -875,32 +1003,44 @@ Generado automáticamente desde la consola administrativa.`;
                 return (
                   <div
                     key={mod.id}
-                    className={`rounded-2xl p-5 bg-gradient-to-br ${mod.gradient} border shadow-lg hover:shadow-xl transition-all flex flex-col justify-between group hover:scale-[1.01]`}
+                    className={`rounded-3xl p-5 bg-gradient-to-br ${mod.gradient} border shadow-xl hover:shadow-2xl transition-all flex flex-col justify-between group hover:scale-[1.01]`}
                   >
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="p-2.5 rounded-xl bg-slate-900/80 text-white shadow-md">
-                          <Icon className="w-5 h-5" />
+                      
+                      {/* Image Banner Header */}
+                      <div className="relative h-32 rounded-2xl overflow-hidden border border-slate-800">
+                        <img 
+                          src={mod.image} 
+                          alt={mod.name} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+                        
+                        <div className="absolute top-2.5 left-2.5 p-2 rounded-xl bg-slate-950/80 backdrop-blur-md text-white border border-slate-700/60 shadow-md">
+                          <Icon className="w-4 h-4" />
                         </div>
-                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-900/80 text-slate-300 border border-slate-700/60 tracking-wider">
-                          {mod.badge}
-                        </span>
+
+                        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border backdrop-blur-md ${mod.tagBg}`}>
+                            {mod.badge}
+                          </span>
+                        </div>
                       </div>
 
                       <div>
                         <h4 className="text-sm font-black text-white group-hover:text-indigo-200 transition-colors">
                           {mod.name}
                         </h4>
-                        <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                        <p className="text-xs text-slate-300 mt-1 leading-relaxed line-clamp-3">
                           {mod.summary}
                         </p>
                       </div>
 
                       <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
                         {mod.features.slice(0, 2).map((feat, idx) => (
-                          <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-400">
+                          <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-300">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                            <span>{feat}</span>
+                            <span className="line-clamp-1">{feat}</span>
                           </div>
                         ))}
                       </div>
@@ -908,7 +1048,7 @@ Generado automáticamente desde la consola administrativa.`;
 
                     <button
                       onClick={() => onNavigateToTab(mod.id)}
-                      className="mt-4 w-full py-2 rounded-xl bg-slate-900/90 hover:bg-white hover:text-slate-900 text-slate-200 font-bold text-xs transition-all flex items-center justify-center gap-2 border border-slate-700/80 shadow-xs group-hover:border-white/40"
+                      className="mt-4 w-full py-2.5 rounded-xl bg-slate-900/90 hover:bg-white hover:text-slate-900 text-slate-200 font-bold text-xs transition-all flex items-center justify-center gap-2 border border-slate-700/80 shadow-xs group-hover:border-white/40 active:scale-95"
                     >
                       <span>Abrir Módulo</span>
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -923,7 +1063,7 @@ Generado automáticamente desde la consola administrativa.`;
       {/* TAB CONTENT 6: ARCHITECTURE & DATA FLOW */}
       {activeDocTab === 'architecture' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="rounded-3xl p-6 bg-slate-900/90 border border-rose-500/30 shadow-xl space-y-6">
+          <div className="rounded-3xl p-6 bg-gradient-to-br from-rose-950/70 via-slate-900 to-slate-950 border border-rose-500/40 shadow-xl space-y-6">
             <h3 className="text-lg font-black text-white flex items-center gap-2">
               <FolderSync className="w-5 h-5 text-rose-400" />
               <span>Arquitectura Integral del Flujo de Datos</span>
@@ -932,27 +1072,27 @@ Generado automáticamente desde la consola administrativa.`;
             <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 space-y-6 font-mono text-xs">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-center">
                 
-                <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 space-y-1">
+                <div className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 space-y-1">
                   <div className="font-bold">1. Cliente</div>
-                  <div className="text-[10px] text-slate-400">WhatsApp App (Mensaje de texto/audio)</div>
+                  <div className="text-[10px] text-slate-400">WhatsApp App (Texto/Audio)</div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 space-y-1">
+                <div className="p-3.5 rounded-xl bg-indigo-950/60 border border-indigo-500/40 text-indigo-300 space-y-1">
                   <div className="font-bold">2. Meta Cloud API</div>
-                  <div className="text-[10px] text-slate-400">Webhook HTTP POST a n8n / Servidor</div>
+                  <div className="text-[10px] text-slate-400">Webhook HTTP POST a n8n</div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-purple-950/60 border border-purple-500/40 text-purple-300 space-y-1">
+                <div className="p-3.5 rounded-xl bg-purple-950/60 border border-purple-500/40 text-purple-300 space-y-1">
                   <div className="font-bold">3. Gemini 2.5 AI</div>
-                  <div className="text-[10px] text-slate-400">NLP, Sugerencias & Carrito</div>
+                  <div className="text-[10px] text-slate-400">NLP & Carrito Inteligente</div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-300 space-y-1">
+                <div className="p-3.5 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-300 space-y-1">
                   <div className="font-bold">4. KDS & Cocina</div>
                   <div className="text-[10px] text-slate-400">Comanda en tiempo real + Kardex</div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 space-y-1">
+                <div className="p-3.5 rounded-xl bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 space-y-1">
                   <div className="font-bold">5. Google Sheets</div>
                   <div className="text-[10px] text-slate-400">Auditoría contable y métricas</div>
                 </div>
@@ -976,7 +1116,7 @@ Generado automáticamente desde la consola administrativa.`;
       {/* TAB CONTENT 7: INTERACTIVE CONSOLE & CURL COMMANDS */}
       {activeDocTab === 'interactive_console' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="rounded-3xl p-6 bg-slate-900/90 border border-sky-500/30 shadow-xl space-y-6">
+          <div className="rounded-3xl p-6 bg-gradient-to-br from-sky-950/70 via-slate-900 to-slate-950 border border-sky-500/40 shadow-xl space-y-6">
             <h3 className="text-lg font-black text-white flex items-center gap-2">
               <Terminal className="w-5 h-5 text-sky-400" />
               <span>Consola Interactiva de Comandos cURL & Webhooks</span>
@@ -1020,7 +1160,7 @@ Generado automáticamente desde la consola administrativa.`;
                   <pre className="p-2.5 rounded-xl bg-slate-900 text-[11px] font-mono text-slate-300 overflow-x-auto">
 {`curl -X POST "https://tu-dominio.com/api/webhook/wompi" \\
   -H "Content-Type: application/json" \\
-  -d '{"event":"transaction.updated","data":{"transaction":{"id":"tx_9981","reference":"PED-1001-USA","status":"APPROVED","amount_in_cents":4000}}}'`}
+  -d '{"event":"transaction.updated","data":{"transaction":{"id":"tx_9981","reference":"PED-1001-USA","status":"APPROVED","amount_in_cents":4800}}}'`}
                   </pre>
                 </div>
               </div>
@@ -1053,11 +1193,21 @@ Generado automáticamente desde la consola administrativa.`;
       {/* TAB CONTENT 8: FAQ & TROUBLESHOOTING */}
       {activeDocTab === 'troubleshooting' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="rounded-3xl p-6 bg-slate-900/90 border border-teal-500/30 shadow-xl space-y-4">
-            <h3 className="text-lg font-black text-white flex items-center gap-2">
-              <HelpCircle className="w-5 h-5 text-teal-400" />
-              <span>Preguntas Frecuentes & Solución Rápida de Errores</span>
-            </h3>
+          <div className="rounded-3xl p-6 bg-gradient-to-br from-teal-950/70 via-slate-900 to-slate-950 border border-teal-500/40 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-teal-400" />
+                <span>Preguntas Frecuentes & Solución Rápida de Errores</span>
+              </h3>
+
+              <button
+                onClick={() => setIsCopilotOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-teal-900/60 hover:bg-teal-800 text-teal-200 text-xs font-black border border-teal-500/40 transition-all flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-teal-300" />
+                <span>Consultar Asistente IA</span>
+              </button>
+            </div>
 
             <div className="space-y-3 pt-2">
               {[
@@ -1092,6 +1242,14 @@ Generado automáticamente desde la consola administrativa.`;
           </div>
         </div>
       )}
+
+      {/* Interactive AI System Copilot Modal */}
+      <AiSystemCopilotModal
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+        activeTab={activeDocTab as any}
+        onNavigateToTab={onNavigateToTab}
+      />
 
     </div>
   );

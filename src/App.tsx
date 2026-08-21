@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar } from './components/Navbar';
 import { MobileQuickNav } from './components/MobileQuickNav';
 import { ChatBotView } from './components/ChatBotView';
@@ -21,6 +21,7 @@ import { ThemeModal } from './components/ThemeModal';
 import { DeployBotModal } from './components/DeployBotModal';
 import { InvoiceModal } from './components/InvoiceModal';
 import { GooglePickerModal } from './components/GooglePickerModal';
+import { AiSystemCopilotModal } from './components/AiSystemCopilotModal';
 
 import { FRANCHISE_BRANDS } from './data/franchisesAndPlatforms';
 import { USER_PROFILES } from './data/userProfiles';
@@ -37,6 +38,8 @@ import {
 import { CheckCircle2, Sparkles, X } from 'lucide-react';
 import { testFirebaseConnection } from './firebase';
 import { saveOrderToFirestore, saveBotToFirestore, saveBranchToFirestore } from './services/firebaseService';
+import { useOfflineSyncManager } from './hooks/useOfflineSyncManager';
+import { getCachedOrders, cacheOrdersLocally } from './services/offlineSyncService';
 
 export const App: React.FC = () => {
   // State for brands and sedes
@@ -45,10 +48,42 @@ export const App: React.FC = () => {
   const [selectedBrand, setSelectedBrand] = useState<FranchiseBrand>(FRANCHISE_BRANDS[0]);
   const [selectedSede, setSelectedSede] = useState<BranchSede>(FRANCHISE_BRANDS[0].branches[0]);
   const [currentUser, setCurrentUser] = useState<UserProfile>(USER_PROFILES[0]);
-  const [currentTheme, setCurrentTheme] = useState<AppThemeConfig>(APP_THEMES.dark_slate);
+  const [autoDetectOsTheme, setAutoDetectOsTheme] = useState<boolean>(true);
+  const [currentTheme, setCurrentTheme] = useState<AppThemeConfig>(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return isSystemDark ? APP_THEMES.dark_slate : APP_THEMES.light_clean;
+    }
+    return APP_THEMES.dark_slate;
+  });
   const [currentCurrency, setCurrentCurrency] = useState<'USD' | 'COP'>('USD');
   const [currentLanguage, setCurrentLanguage] = useState<'es' | 'en'>('es');
   const [googleUser, setGoogleUser] = useState<any>(null);
+
+  // OS Theme Preference Auto-Detection Listener (Dark Slate vs Light Clean)
+  useEffect(() => {
+    if (!autoDetectOsTheme || typeof window === 'undefined' || !window.matchMedia) return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleThemeChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      if (e.matches) {
+        setCurrentTheme(APP_THEMES.dark_slate);
+      } else {
+        setCurrentTheme(APP_THEMES.light_clean);
+      }
+    };
+
+    // Initial sync
+    handleThemeChange(mediaQuery);
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleThemeChange);
+      return () => mediaQuery.removeEventListener('change', handleThemeChange);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(handleThemeChange);
+      return () => mediaQuery.removeListener(handleThemeChange);
+    }
+  }, [autoDetectOsTheme]);
 
   // Initialize Firebase connection on mount
   useEffect(() => {
@@ -63,96 +98,126 @@ export const App: React.FC = () => {
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isPickerModalOpen, setIsPickerModalOpen] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<Order | null>(null);
 
-  // Initial Orders
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      pedido_id: '1001',
-      reference: 'PED-1001-USA',
-      sede_id: 'brickell-miami',
-      nombre_sede: 'Brickell Miami Downtown',
-      telefono: '+1 (305) 555-1234',
-      phone_number_id: 'phone_10492840294',
-      nombre_cliente: 'Alejandro Morales',
-      direccion_entrega: '1100 Brickell Ave, Apt 14B, Miami, FL',
-      items: [
-        { producto_id: 'b-01', nombre: 'The Double Smash Burger', cantidad: 2, precio_unitario: 14.50, subtotal: 29.00 },
-        { producto_id: 's-01', nombre: 'Truffle Parmesan Fries', cantidad: 1, precio_unitario: 6.50, subtotal: 6.50 }
-      ],
-      subtotal: 35.50,
-      costo_domicilio: 4.50,
-      total: 40.00,
-      moneda: 'USD',
-      estado: 'en_cocina',
-      wompi_reference: 'wompi_PED-1001-USA',
-      link_pago: 'https://checkout.wompi.co/l/wompi_PED-1001-USA',
-      created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
-      updated_at: new Date().toISOString(),
-      historial_estados: [
-        { estado: 'creado', timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString() },
-        { estado: 'pagado', timestamp: new Date(Date.now() - 1000 * 60 * 13).toISOString() },
-        { estado: 'en_cocina', timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString() }
-      ]
-    },
-    {
-      pedido_id: '1002',
-      reference: 'PED-1002-USA',
-      sede_id: 'brickell-miami',
-      nombre_sede: 'Brickell Miami Downtown',
-      telefono: '+1 (305) 555-9988',
-      phone_number_id: 'phone_10492840294',
-      nombre_cliente: 'Sophia Martinez',
-      direccion_entrega: '801 S Miami Ave, Miami, FL',
-      items: [
-        { producto_id: 'b-02', nombre: 'Smoked Bacon & Truffle Burger', cantidad: 1, precio_unitario: 16.50, subtotal: 16.50 },
-        { producto_id: 'b-04', nombre: 'Hibiscus Iced Tea', cantidad: 2, precio_unitario: 4.00, subtotal: 8.00 }
-      ],
-      subtotal: 24.50,
-      costo_domicilio: 4.50,
-      total: 29.00,
-      moneda: 'USD',
-      estado: 'listo_cocina',
-      wompi_reference: 'wompi_PED-1002-USA',
-      created_at: new Date(Date.now() - 1000 * 60 * 22).toISOString(),
-      updated_at: new Date().toISOString(),
-      historial_estados: [
-        { estado: 'creado', timestamp: new Date(Date.now() - 1000 * 60 * 25).toISOString() },
-        { estado: 'pagado', timestamp: new Date(Date.now() - 1000 * 60 * 23).toISOString() },
-        { estado: 'listo_cocina', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() }
-      ]
-    },
-    {
-      pedido_id: '1003',
-      reference: 'PED-1003-USA',
-      sede_id: 'orlando-millenia',
-      nombre_sede: 'Orlando Millenia Plaza',
-      telefono: '+1 (407) 555-3344',
-      phone_number_id: 'phone_10492840294',
-      nombre_cliente: 'Carlos Valencia',
-      direccion_entrega: '4200 Conroy Rd, Orlando, FL',
-      items: [
-        { producto_id: 'b-01', nombre: 'The Double Smash Burger', cantidad: 3, precio_unitario: 14.50, subtotal: 43.50 }
-      ],
-      subtotal: 43.50,
-      costo_domicilio: 5.00,
-      total: 48.50,
-      moneda: 'USD',
-      estado: 'en_camino',
-      wompi_reference: 'wompi_PED-1003-USA',
-      created_at: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ]);
+  // Initial Orders with local cache recovery fallback
+  const [orders, setOrders] = useState<Order[]>(() => {
+    const cached = getCachedOrders();
+    if (cached && cached.length > 0) return cached;
+    return [
+      {
+        pedido_id: '1001',
+        reference: 'PED-1001-USA',
+        sede_id: 'brickell-miami',
+        nombre_sede: 'Brickell Miami Downtown',
+        telefono: '+1 (305) 555-1234',
+        phone_number_id: 'phone_10492840294',
+        nombre_cliente: 'Alejandro Morales',
+        direccion_entrega: '1100 Brickell Ave, Apt 14B, Miami, FL',
+        items: [
+          { producto_id: 'b-01', nombre: 'The Double Smash Burger', cantidad: 2, precio_unitario: 14.50, subtotal: 29.00 },
+          { producto_id: 's-01', nombre: 'Truffle Parmesan Fries', cantidad: 1, precio_unitario: 6.50, subtotal: 6.50 }
+        ],
+        subtotal: 35.50,
+        costo_domicilio: 4.50,
+        total: 40.00,
+        moneda: 'USD',
+        estado: 'en_cocina',
+        wompi_reference: 'wompi_PED-1001-USA',
+        link_pago: 'https://checkout.wompi.co/l/wompi_PED-1001-USA',
+        created_at: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+        updated_at: new Date().toISOString(),
+        historial_estados: [
+          { estado: 'creado', timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString() },
+          { estado: 'pagado', timestamp: new Date(Date.now() - 1000 * 60 * 13).toISOString() },
+          { estado: 'en_cocina', timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString() }
+        ]
+      },
+      {
+        pedido_id: '1002',
+        reference: 'PED-1002-USA',
+        sede_id: 'brickell-miami',
+        nombre_sede: 'Brickell Miami Downtown',
+        telefono: '+1 (305) 555-9988',
+        phone_number_id: 'phone_10492840294',
+        nombre_cliente: 'Sophia Martinez',
+        direccion_entrega: '801 S Miami Ave, Miami, FL',
+        items: [
+          { producto_id: 'b-02', nombre: 'Smoked Bacon & Truffle Burger', cantidad: 1, precio_unitario: 16.50, subtotal: 16.50 },
+          { producto_id: 'b-04', nombre: 'Hibiscus Iced Tea', cantidad: 2, precio_unitario: 4.00, subtotal: 8.00 }
+        ],
+        subtotal: 24.50,
+        costo_domicilio: 4.50,
+        total: 29.00,
+        moneda: 'USD',
+        estado: 'listo_cocina',
+        wompi_reference: 'wompi_PED-1002-USA',
+        created_at: new Date(Date.now() - 1000 * 60 * 22).toISOString(),
+        updated_at: new Date().toISOString(),
+        historial_estados: [
+          { estado: 'creado', timestamp: new Date(Date.now() - 1000 * 60 * 25).toISOString() },
+          { estado: 'pagado', timestamp: new Date(Date.now() - 1000 * 60 * 23).toISOString() },
+          { estado: 'listo_cocina', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() }
+        ]
+      },
+      {
+        pedido_id: '1003',
+        reference: 'PED-1003-USA',
+        sede_id: 'orlando-millenia',
+        nombre_sede: 'Orlando Millenia Plaza',
+        telefono: '+1 (407) 555-3344',
+        phone_number_id: 'phone_10492840294',
+        nombre_cliente: 'Carlos Valencia',
+        direccion_entrega: '4200 Conroy Rd, Orlando, FL',
+        items: [
+          { producto_id: 'b-01', nombre: 'The Double Smash Burger', cantidad: 3, precio_unitario: 14.50, subtotal: 43.50 }
+        ],
+        subtotal: 43.50,
+        costo_domicilio: 5.00,
+        total: 48.50,
+        moneda: 'USD',
+        estado: 'en_camino',
+        wompi_reference: 'wompi_PED-1003-USA',
+        created_at: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ];
+  });
+
+  // Notification callback handler
+  const handleOfflineNotification = useCallback((notif: { title: string; message: string }) => {
+    setNotification({ title: notif.title, message: notif.message });
+    setTimeout(() => setNotification(null), 4500);
+  }, []);
+
+  // Offline Sync Manager Hook
+  const {
+    isOnline,
+    isSyncing,
+    pendingCount,
+    syncQueue,
+    updateOrderStatusOffline
+  } = useOfflineSyncManager({
+    orders,
+    setOrders,
+    onNotification: handleOfflineNotification
+  });
 
   // Handle new order created from chatbot
   const handleOrderCreated = (newOrder: Order) => {
-    setOrders((prev) => [newOrder, ...prev]);
-    
-    // Save to Firestore seamlessly in background
-    saveOrderToFirestore(newOrder).catch((err) => {
-      console.warn('Firestore order sync:', err);
+    setOrders((prev) => {
+      const updated = [newOrder, ...prev];
+      cacheOrdersLocally(updated);
+      return updated;
     });
+    
+    // Save to Firestore seamlessly in background or queue if offline
+    if (navigator.onLine) {
+      saveOrderToFirestore(newOrder).catch((err) => {
+        console.warn('Firestore order sync:', err);
+      });
+    }
 
     setNotification({
       title: '¡Nueva Orden Recibida!',
@@ -161,27 +226,9 @@ export const App: React.FC = () => {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // Update order status
-  const handleUpdateOrderStatus = (orderId: string, newStatus: OrderStatus) => {
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.pedido_id === orderId) {
-          const updatedHistory = [
-            ...(o.historial_estados || []),
-            { estado: newStatus, timestamp: new Date().toISOString() }
-          ];
-          const updatedOrder: Order = {
-            ...o,
-            estado: newStatus,
-            updated_at: new Date().toISOString(),
-            historial_estados: updatedHistory
-          };
-          saveOrderToFirestore(updatedOrder).catch(console.warn);
-          return updatedOrder;
-        }
-        return o;
-      })
-    );
+  // Update order status with resilient offline queue
+  const handleUpdateOrderStatus = (orderId: string, newStatus: OrderStatus, note?: string) => {
+    updateOrderStatusOffline(orderId, newStatus, note);
   };
 
   const handleOpenInvoiceModal = (order: Order) => {
@@ -345,6 +392,10 @@ export const App: React.FC = () => {
         onOpenThemeModal={() => setIsThemeModalOpen(true)}
         onOpenDeployModal={() => setIsDeployModalOpen(true)}
         onOpenPicker={() => setIsPickerModalOpen(true)}
+        isOnline={isOnline}
+        pendingSyncCount={pendingCount}
+        isSyncing={isSyncing}
+        onForceSync={() => syncQueue()}
       />
 
       {/* Floating System Notification Banner */}
@@ -369,7 +420,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Main Views Container */}
-      <main className="flex-1 pb-20 md:pb-12 overflow-y-auto">
+      <main className="flex-1 pb-24 md:pb-24 overflow-y-auto">
         {activeTab === 'chat_bot' && (
           <ChatBotView
             selectedSede={selectedSede}
@@ -416,6 +467,10 @@ export const App: React.FC = () => {
             orders={orders}
             onUpdateOrderStatus={handleUpdateOrderStatus}
             onOpenInvoiceModal={handleOpenInvoiceModal}
+            isOnline={isOnline}
+            pendingSyncCount={pendingCount}
+            isSyncing={isSyncing}
+            onForceSync={() => syncQueue()}
           />
         )}
 
@@ -424,6 +479,10 @@ export const App: React.FC = () => {
             orders={orders}
             onUpdateOrderStatus={handleUpdateOrderStatus}
             onOpenInvoiceModal={handleOpenInvoiceModal}
+            isOnline={isOnline}
+            pendingSyncCount={pendingCount}
+            isSyncing={isSyncing}
+            onForceSync={() => syncQueue()}
           />
         )}
 
@@ -448,7 +507,12 @@ export const App: React.FC = () => {
         {activeTab === 'landing_usa' && <LandingView />}
 
         {activeTab === 'workspace_hub' && (
-          <WorkspaceHubView onOpenPicker={() => setIsPickerModalOpen(true)} />
+          <WorkspaceHubView 
+            onOpenPicker={() => setIsPickerModalOpen(true)}
+            brands={brands}
+            selectedBrand={selectedBrand}
+            selectedSede={selectedSede}
+          />
         )}
 
         {activeTab === 'kardex_inventario' && <KardexView />}
@@ -490,7 +554,20 @@ export const App: React.FC = () => {
         onOpenThemeModal={() => setIsThemeModalOpen(true)}
         onOpenDeployModal={() => setIsDeployModalOpen(true)}
         onOpenPicker={() => setIsPickerModalOpen(true)}
+        onOpenAIGuide={() => setIsCopilotOpen(true)}
       />
+
+      {/* Floating AI System Assistant Button */}
+      <button
+        onClick={() => setIsCopilotOpen(true)}
+        className="fixed bottom-24 right-5 sm:bottom-28 sm:right-8 z-40 p-3.5 rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 hover:from-emerald-400 hover:to-indigo-500 text-white shadow-2xl shadow-emerald-500/40 border-2 border-white/20 transition-all transform hover:scale-110 active:scale-95 group flex items-center gap-2"
+        title="Copiloto IA de Ayuda & Arquitectura"
+      >
+        <Sparkles className="w-5 h-5 text-emerald-200 animate-pulse" />
+        <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-black pr-1">
+          Asistente IA
+        </span>
+      </button>
 
       {/* Interactive Modals */}
       <ThemeModal
@@ -498,6 +575,8 @@ export const App: React.FC = () => {
         onClose={() => setIsThemeModalOpen(false)}
         currentTheme={currentTheme}
         onSelectTheme={setCurrentTheme}
+        autoDetectOsTheme={autoDetectOsTheme}
+        onToggleAutoDetectOs={setAutoDetectOsTheme}
       />
 
       <DeployBotModal
@@ -518,6 +597,19 @@ export const App: React.FC = () => {
       <GooglePickerModal
         isOpen={isPickerModalOpen}
         onClose={() => setIsPickerModalOpen(false)}
+      />
+
+      <AiSystemCopilotModal
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+        activeTab={activeTab}
+        onNavigateToTab={(tab) => {
+          setActiveTab(tab);
+          setIsCopilotOpen(false);
+        }}
+        selectedBrand={selectedBrand}
+        selectedSede={selectedSede}
+        currentUser={currentUser}
       />
     </div>
   );

@@ -35,10 +35,23 @@ import {
   Sparkles,
   RefreshCw,
   Printer,
-  ChevronRight
+  ChevronRight,
+  Code2,
+  Terminal,
+  Copy,
+  Play,
+  Check,
+  Database,
+  BarChart3,
+  ExternalLink,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
-import { Order, FranchiseBrand, BranchSede, OrderStatus } from '../types';
+import { Order, FranchiseBrand, BranchSede, OrderStatus, PythonAnalyticsScript } from '../types';
 import { FRANCHISE_BRANDS } from '../data/franchisesAndPlatforms';
+import { D3WeeklySalesTrend } from './d3/D3WeeklySalesTrend';
+import { D3SedeDistribution } from './d3/D3SedeDistribution';
+import { PYTHON_ANALYTICS_SCRIPTS, POWER_BI_CONFIG } from '../services/kardexStorageService';
 
 interface AnalyticsViewProps {
   orders: Order[];
@@ -57,10 +70,85 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   currentCurrency,
   onSyncGoogleSheets
 }) => {
+  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'python' | 'powerbi' | 'sedes_matrix'>('dashboard');
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'year'>('today');
   const [filterSedeId, setFilterSedeId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'cancelled' | 'annulled'>('all');
   const [isExporting, setIsExporting] = useState(false);
+
+  // Python Studio state
+  const [selectedPythonScript, setSelectedPythonScript] = useState<PythonAnalyticsScript>(PYTHON_ANALYTICS_SCRIPTS[0]);
+  const [isExecutingScript, setIsExecutingScript] = useState(false);
+  const [scriptOutput, setScriptOutput] = useState<string>(
+    '=== RESTOBOT PYTHON ENGINE READY ===\nConexión a Pandas & NumPy lista.\nHaz clic en "Ejecutar Script en Vivo" para procesar telemetría multi-sede.'
+  );
+  const [copiedDax, setCopiedDax] = useState<string | null>(null);
+
+  const handleRunPython = () => {
+    setIsExecutingScript(true);
+    setScriptOutput(`[${new Date().toLocaleTimeString()}] Iniciando entorno virtual Python 3.11 (RestoBot Runtime)...`);
+    
+    setTimeout(() => {
+      if (selectedPythonScript.category === 'forecasting') {
+        setScriptOutput(
+`[${new Date().toLocaleTimeString()}] Conectando a telemetría de sedes (Orders API)...
+[${new Date().toLocaleTimeString()}] Filtrando datos temporales: 1,420 comandas cargadas.
+[${new Date().toLocaleTimeString()}] Ajustando modelo ARIMA(2,1,2) + Media Móvil (MA-4)...
+------------------------------------------------------------------------
+FORECAST DEMANDA PRÓXIMAS 6 HORAS (POR SUCURSAL):
+  - Brickell Miami:       ~38 pedidos/hr (Pico esperado: 19:30 - 20:30)
+  - Orlando Millenia:     ~26 pedidos/hr (Pico esperado: 13:00 - 14:00)
+  - Envigado Jardines:    ~42 pedidos/hr (Pico esperado: 20:00 - 21:30)
+  - Taquería Reforma:     ~31 pedidos/hr (Pico esperado: 14:30 - 15:30)
+
+PROYECCIÓN DE VENTAS ESTIMADA (6 HRS): $3,840 USD / $14.2M COP
+RECOMENDACIÓN INSUMOS: Alistar 90 porciones de Carne Angus y 45 masas napolitanas.
+✅ Proceso finalizado con éxito (código de salida: 0).`
+        );
+      } else if (selectedPythonScript.category === 'kardex_cogs') {
+        setScriptOutput(
+`[${new Date().toLocaleTimeString()}] Extrayendo snapshot de Kardex Multi-Sede...
+[${new Date().toLocaleTimeString()}] Calculando EOQ (Economic Order Quantity) y Stock de Seguridad:
+------------------------------------------------------------------------
+INSUMO                       EOQ (UNID)   PEDIDOS/AÑO   COSTO TOTAL INV
+Carne Angus Blend 150g          1,103         16.5         $496.30 USD
+Pan Brioche Artesanal           1,766         11.0         $265.00 USD
+Queso Mozzarella Búfala           141          8.5         $169.70 USD
+Salsa Trufa Secreta (L)            83          5.8         $207.80 USD
+Cajas Pizza Kraft               2,771          8.7         $138.60 USD
+
+ALERTA DE DESABASTECIMIENTO: Ningún insumo en riesgo inminente.
+PUNTO DE REORDEN ÓPTIMO: Solicitar al alcanzar el 25% del stock de seguridad.
+✅ Reporte EOQ generado en 0.42s.`
+        );
+      } else {
+        setScriptOutput(
+`[${new Date().toLocaleTimeString()}] Cargando coordenadas GPS de pedidos y repartidores...
+[${new Date().toLocaleTimeString()}] Ejecutando algoritmo K-Means con k=2 clusters de densidad:
+------------------------------------------------------------------------
+🛵 REPARTIDOR #1 (MOTO - CARLOS RUIZ):
+  - Parada 1: PED-1001 ($40.00) -> 1100 Brickell Ave (ETA 12 min)
+  - Parada 2: PED-1002 ($29.00) -> 801 S Miami Ave (ETA 18 min)
+  - Distancia total estimada: 3.4 km | Tiempo de ruta: 22 min
+
+🛵 REPARTIDOR #2 (MOTO - MATEO MORALES):
+  - Parada 1: PED-1003 ($48.50) -> Biscayne Blvd #140 (ETA 15 min)
+  - Parada 2: PED-1005 ($52.00) -> Edgewater Tower 2 (ETA 24 min)
+  - Distancia total estimada: 4.8 km | Tiempo de ruta: 28 min
+
+EFICIENCIA ESTIMADA: Reducción del 34% en tiempo de entrega y ahorro de $18.50 en combustible.
+✅ Clustering geoespacial completado.`
+        );
+      }
+      setIsExecutingScript(false);
+    }, 900);
+  };
+
+  const handleCopyDax = (dax: string, name: string) => {
+    navigator.clipboard.writeText(dax);
+    setCopiedDax(name);
+    setTimeout(() => setCopiedDax(null), 2500);
+  };
 
   // All branches across brands
   const allBranches = useMemo(() => {
@@ -458,6 +546,27 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               </span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* D3.JS INTERACTIVE VISUAL ANALYTICS SECTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-7">
+          <D3WeeklySalesTrend
+            orders={filteredOrders}
+            currentCurrency={currentCurrency}
+            selectedBrand={selectedBrand}
+            selectedSede={selectedSede}
+          />
+        </div>
+        <div className="lg:col-span-5">
+          <D3SedeDistribution
+            orders={orders}
+            brands={brands}
+            currentCurrency={currentCurrency}
+            selectedSedeId={filterSedeId !== 'all' ? filterSedeId : selectedSede.sede_id}
+            onSelectSede={(sedeId) => setFilterSedeId(sedeId)}
+          />
         </div>
       </div>
 

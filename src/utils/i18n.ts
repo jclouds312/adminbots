@@ -29,6 +29,7 @@ export const DICTIONARY: Translations = {
   'navbar.brand': { es: 'RestoBot AI', en: 'RestoBot AI' },
   'navbar.active_sede': { es: 'Sede Activa', en: 'Active Branch' },
   'navbar.deploy_bot': { es: '+ Desplegar Bot', en: '+ Deploy Bot' },
+  'navbar.ai_guide': { es: 'Asistente IA Copilot', en: 'AI Copilot Guide' },
   'navbar.theme': { es: 'Personalizar Tema', en: 'Customize Theme' },
   'navbar.dark_mode': { es: 'Modo Oscuro', en: 'Dark Mode' },
   'navbar.light_mode': { es: 'Modo Claro', en: 'Light Mode' },
@@ -36,14 +37,42 @@ export const DICTIONARY: Translations = {
   'navbar.language': { es: 'Idioma', en: 'Language' },
   'navbar.role': { es: 'Rol Activo', en: 'Active Role' },
   'navbar.google_sync': { es: 'Google Sync', en: 'Google Sync' },
+  'navbar.all_modules': { es: 'Todos los Módulos', en: 'All Modules' },
+  'navbar.operations': { es: 'Operaciones', en: 'Operations' },
+  'navbar.strategy': { es: 'Estrategia & Docs', en: 'Strategy & Docs' },
+  'navbar.integrations': { es: 'Cloud & APIs', en: 'Cloud & APIs' },
+
+  // Mobile Navigation
+  'mobile.quick_panel': { es: 'Panel Rápido & Centro de Módulos', en: 'Quick Panel & Module Hub' },
+  'mobile.all_modules_connected': { es: '15 Módulos Conectados', en: '15 Connected Modules' },
+  'mobile.switch_currency': { es: 'Moneda Rápida', en: 'Fast Currency' },
+  'mobile.switch_language': { es: 'Idioma', en: 'Language' },
+  'mobile.visual_theme': { es: 'Tema Visual', en: 'Visual Theme' },
+  'mobile.deploy_new_bot': { es: '+ Desplegar Nuevo Bot de Negocio', en: '+ Deploy New Business Bot' },
 
   // Bot Lab & Studio
-  'botlab.title': { es: 'Laboratorio de Bots & Creador de Restaurantes', en: 'Bot Laboratory & Restaurant Studio' },
-  'botlab.subtitle': { es: 'Crea nuevas entidades, gestiona sedes, diseña menús con imágenes y precios, configura prompts y lanza a pruebas o producción.', en: 'Create new entities, manage branches, design menus with images & prices, tune prompts, and launch to staging or production.' },
-  'botlab.tab_restaurants': { es: '1. Restaurantes & Sedes', en: '1. Restaurants & Branches' },
+  'botlab.title': { es: 'Laboratorio de Bots, Nichos & Menús Inteligentes', en: 'Bot Lab, Niches & Smart Menu Studio' },
+  'botlab.subtitle': { es: 'Crea bots por nichos comerciales, diseña cartas interactivas con fotos HD, añade extras y lanza a pruebas o producción.', en: 'Create bots by industry niches, design interactive menus with HD photos, add modifiers and launch to staging or live production.' },
+  'botlab.tab_niches': { es: '0. Nichos de Trabajo', en: '0. Work Niches' },
+  'botlab.tab_restaurants': { es: '1. Restaurantes & Sedes', en: '1. Brands & Branches' },
   'botlab.tab_menu_cards': { es: '2. Menú & Cards Visuales', en: '2. Menu & Visual Cards' },
   'botlab.tab_bot_schema': { es: '3. Esquema & Prompts Bot', en: '3. Bot Schema & Prompts' },
   'botlab.tab_sales_agency': { es: '4. Venta de Bots USA & Global', en: '4. Bot Sales USA & Global' },
+  'botlab.ai_assistant_btn': { es: '✨ IA Generador de Bots', en: '✨ AI Bot Generator' },
+
+  // Niches
+  'niche.burgers': { es: 'Hamburguesas, Carnes & Grill', en: 'Burgers, Steaks & Grill' },
+  'niche.pizzas': { es: 'Pizzerías & Comida Italiana', en: 'Pizzerias & Italian Dining' },
+  'niche.tacos': { es: 'Tacos, Birria & Cocina Mexicana', en: 'Tacos, Birria & Mexican Food' },
+  'niche.cafes': { es: 'Cafeterías, Bakery & Brunch', en: 'Coffee Shops, Bakery & Brunch' },
+  'niche.sushi': { es: 'Sushi, Poke & Cocina Asiática', en: 'Sushi, Poke & Asian Cuisine' },
+  'niche.dark_kitchen': { es: 'Dark Kitchen & Delivery Exprés', en: 'Dark Kitchen & Fast Delivery' },
+  'niche.bars': { es: 'Bares, Pubs & Coctelería de Autor', en: 'Bars, Pubs & Signature Cocktails' },
+  'niche.hotels': { es: 'Hoteles, Glamping & Turismo', en: 'Hotels, Glamping & Tourism' },
+  'niche.beauty': { es: 'Salones de Belleza, Barberías & Spa', en: 'Beauty Salons, Barbershops & Spa' },
+  'niche.services': { es: 'Servicios Profesionales & Citas', en: 'Professional Services & Appointments' },
+  'niche.retail': { es: 'Tiendas Retail & E-commerce', en: 'Retail Stores & E-commerce' },
+  'niche.apply_preset': { es: '⚡ Aplicar Plantilla de Nicho y Menú Starter', en: '⚡ Apply Niche Template & Starter Menu' },
 
   // Restaurant & Sede Management
   'restaurant.create_brand': { es: 'Crear Nueva Entidad / Restaurante', en: 'Create New Entity / Restaurant' },
@@ -68,7 +97,9 @@ export const DICTIONARY: Translations = {
   'sede.hours': { es: 'Horario de Atención', en: 'Operating Hours' },
 
   // Menu Studio
-  'menu.add_item': { es: '+ Añadir Nuevo Plato', en: '+ Add New Dish' },
+  'menu.add_item': { es: '+ Añadir Nuevo Plato / Servicio', en: '+ Add New Dish / Service' },
+  'menu.add_category': { es: '+ Nueva Categoría', en: '+ New Category' },
+  'menu.all_categories': { es: 'Todas las Categorías', en: 'All Categories' },
   'menu.item_name': { es: 'Nombre del Plato / Producto', en: 'Dish / Product Name' },
   'menu.category': { es: 'Categoría', en: 'Category' },
   'menu.price': { es: 'Precio', en: 'Price' },
@@ -80,19 +111,27 @@ export const DICTIONARY: Translations = {
   'menu.preset_photos': { es: 'Galería de Fotos Preset', en: 'Preset Photo Gallery' },
   'menu.edit_dish': { es: 'Editar Plato', en: 'Edit Dish' },
   'menu.delete_dish': { es: 'Eliminar Plato', en: 'Delete Dish' },
+  'menu.test_in_chat': { es: '💬 Probar en ChatBot WhatsApp', en: '💬 Test in WhatsApp ChatBot' },
 
   // Bot Schema & Promotion
   'schema.status': { es: 'Estado del Bot', en: 'Bot Lifecycle Status' },
   'schema.status_draft': { es: 'Borrador (Configuración Inicial)', en: 'Draft (Initial Setup)' },
   'schema.status_testing': { es: 'En Pruebas (Staging / QA Sandbox)', en: 'In Testing (Staging / QA Sandbox)' },
   'schema.status_production': { es: 'Producción (En Vivo Meta WhatsApp)', en: 'Production (Live Meta WhatsApp)' },
-  'schema.launch_testing': { es: '🚀 Lanzar a Pruebas', en: '🚀 Launch to Testing' },
+  'schema.launch_testing': { es: '🚀 Lanzar a Pruebas (Sandbox)', en: '🚀 Launch to Testing (Sandbox)' },
   'schema.launch_production': { es: '🔥 Pasar a Producción Live', en: '🔥 Promote to Live Production' },
   'schema.system_prompt': { es: 'Prompt Maestro del Sistema (IA)', en: 'Master System Prompt (AI)' },
   'schema.welcome_message': { es: 'Mensaje de Bienvenida', en: 'Welcome Greeting' },
   'schema.tone': { es: 'Tono de Conversación', en: 'Conversation Tone' },
   'schema.model': { es: 'Modelo de Inteligencia Artificial', en: 'AI Model' },
   'schema.save_schema': { es: 'Guardar Esquema del Bot', en: 'Save Bot Schema' },
+
+  // AI Copilot Modal
+  'copilot.title': { es: 'Copilot IA: Arquitecto de Bots & Menús Nómada', en: 'AI Copilot: Nomada Bot & Menu Architect' },
+  'copilot.subtitle': { es: 'Genera bots completos, cartas por nichos, prompts especializados y resuelve dudas operativas al instante.', en: 'Generate complete bots, menus by niche, specialized prompts and solve operational questions instantly.' },
+  'copilot.prompt_placeholder': { es: 'Pídele a la IA: ej. "Crea un bot para una pizzería gourmet en Miami con menú en USD y tono italiano"...', en: 'Ask AI: e.g. "Create a bot for a gourmet pizzeria in Miami with USD menu and Italian tone"...' },
+  'copilot.generate_btn': { es: 'Generar con IA', en: 'Generate with AI' },
+  'copilot.quick_prompts': { es: 'Acciones Rápidas con IA', en: 'Quick AI Actions' },
 
   // Bot Sales Agency
   'sales.headline': { es: 'Plataforma de Venta de Bots para Restaurantes en USA & LATAM', en: 'Restaurant Bot Sales Platform for USA & LATAM' },
@@ -127,3 +166,4 @@ export function getTranslation(key: string, lang: SupportedLanguage = 'es'): str
   }
   return key;
 }
+

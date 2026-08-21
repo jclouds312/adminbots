@@ -17,6 +17,7 @@ export type NavigationTabId =
   | 'kds_cocina'
   | 'kanban_pedidos'
   | 'analytics'
+  | 'repartidores_fleet'
   | 'plan_18_dias'
   | 'landing_usa'
   | 'workspace_hub'
@@ -886,22 +887,37 @@ export interface InvoiceRecord {
   id: string;
   invoiceNumber: string;
   orderId: string;
-  sede_id: string;
-  nombre_restaurante: string;
-  cliente_nombre: string;
-  cliente_telefono: string;
-  direccion_entrega: string;
-  fecha: string;
+  sede_id?: string;
+  sedeId?: string;
+  nombre_restaurante?: string;
+  sedeName?: string;
+  cliente_nombre?: string;
+  clientName?: string;
+  cliente_telefono?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  direccion_entrega?: string;
+  fecha?: string;
   subtotal: number;
-  impuesto: number;
-  costo_domicilio: number;
-  propina: number;
+  impuesto?: number;
+  tax?: number;
+  costo_domicilio?: number;
+  deliveryCost?: number;
+  propina?: number;
   total: number;
-  moneda: string;
-  metodo_pago: string;
-  estado_pago: string;
-  qrPayload: string;
-  items: {
+  moneda?: string;
+  currency?: 'USD' | 'COP' | string;
+  metodo_pago?: string;
+  paymentMethod?: string;
+  estado_pago?: string;
+  paymentStatus?: string;
+  taxType?: string;
+  qrPayload?: string;
+  dianCufe?: string;
+  issuedAt?: string;
+  sentToCustomerVia?: string;
+  pdfUrl?: string;
+  items?: {
     nombre: string;
     cantidad: number;
     precio: number;
@@ -940,3 +956,112 @@ export interface MetaTokenValidationResult {
   errorMessage?: string;
   latencyMs: number;
 }
+
+export interface CourierDriver {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  avatar: string;
+  vehicle: 'moto' | 'bici' | 'auto' | 'patineta';
+  plateNumber?: string;
+  status: 'disponible' | 'en_camino' | 'ocupado' | 'fuera_servicio';
+  sedeId: string;
+  sedeNombre?: string;
+  employmentType: 'interno_nomina' | 'independiente_freelance' | 'app_aggregator';
+  rating: number;
+  tripsToday: number;
+  totalTrips: number;
+  earningsToday: number;
+  tipsToday: number;
+  currentOrderIds: string[];
+  batteryLevel?: number;
+  lastLocationUpdate?: string;
+  cashInHandToReconcile?: number;
+}
+
+export interface DeliveryDispatchJob {
+  id: string;
+  orderId: string;
+  orderReference: string;
+  sedeId: string;
+  sedeNombre: string;
+  platform: 'flota_propia' | 'independiente' | 'rappi_turbo' | 'uber_direct' | 'doordash_drive' | 'didi_food';
+  driverId?: string;
+  driverName?: string;
+  driverPhone?: string;
+  customerName: string;
+  customerPhone: string;
+  deliveryAddress: string;
+  deliveryFee: number;
+  tip: number;
+  paymentStatus: 'pagado_online' | 'cobro_efectivo_contraentrega' | 'cobro_datafono';
+  totalToCollect: number;
+  status: 'pendiente_asignacion' | 'asignado' | 'en_sede' | 'en_camino' | 'entregado' | 'cancelado';
+  estimatedMinutes: number;
+  createdAt: string;
+  dispatchedAt?: string;
+  deliveredAt?: string;
+  trackingUrl?: string;
+}
+
+export interface KardexRecipeIngredient {
+  insumo_id: string;
+  insumo_nombre: string;
+  cantidad_por_porcion: number;
+  unidad_medida: string;
+  costo_unitario: number;
+  costo_porcion: number;
+}
+
+export interface KardexRecipe {
+  id: string;
+  producto_id: string;
+  producto_nombre: string;
+  categoria_menu: string;
+  sede_id: string;
+  precio_venta: number;
+  insumos: KardexRecipeIngredient[];
+  costo_total_preparacion: number;
+  margen_bruto_porcentaje: number;
+  utilidad_bruta_unitaria: number;
+  alerta_agotado: boolean;
+}
+
+export interface BranchAccountingSnapshot {
+  sede_id: string;
+  sede_nombre: string;
+  moneda: 'USD' | 'COP';
+  total_pedidos: number;
+  ventas_brutas: number;
+  costo_insumos_cogs: number;
+  utilidad_bruta: number;
+  margen_bruto_porcentaje: number;
+  gastos_delivery_repartidores: number;
+  comisiones_plataformas_pagadas: number;
+  comisiones_ahorradas_whatsapp: number;
+  impuestos_estimados: number;
+  utilidad_neta_estimada: number;
+  valor_inventario_activo: number;
+  items_stock_critico: number;
+  puntos_equilibrio_pedidos: number;
+}
+
+export interface PythonAnalyticsScript {
+  id: string;
+  title: string;
+  description: string;
+  category: 'forecasting' | 'kardex_cogs' | 'drivers_routing' | 'cluster_customers';
+  code: string;
+  libraryStack: string[];
+}
+
+export interface PowerBiDatasetConfig {
+  workspaceId: string;
+  datasetName: string;
+  tablesCount: number;
+  daxMeasures: { name: string; formula: string; description: string }[];
+  directQueryEndpoint: string;
+  lastSyncUtc: string;
+}
+

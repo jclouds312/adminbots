@@ -31,7 +31,12 @@ import {
   BookOpen,
   Search,
   X,
-  ExternalLink
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Menu,
+  LayoutDashboard
 } from 'lucide-react';
 import { FranchiseBrand, RestaurantSede, UserProfile, AppThemeConfig, NavigationTabId, Order } from '../types';
 import { FRANCHISE_BRANDS } from '../data/franchisesAndPlatforms';
@@ -65,6 +70,10 @@ interface NavbarProps {
   setGoogleUser?: (user: any) => void;
   onGoogleSignIn?: () => void;
   onGoogleSignOut?: () => void;
+  isOnline?: boolean;
+  pendingSyncCount?: number;
+  isSyncing?: boolean;
+  onForceSync?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -91,13 +100,61 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenPicker = () => {},
   googleUser,
   onGoogleSignIn = () => {},
-  onGoogleSignOut = () => {}
+  onGoogleSignOut = () => {},
+  isOnline = true,
+  pendingSyncCount = 0,
+  isSyncing = false,
+  onForceSync
 }) => {
   const { t, language, toggleLanguage } = useLanguage();
   const activeTabId = currentTab || activeTab || 'chat_bot';
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'operations' | 'expansion' | 'integrations'>('all');
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Check scroll position for scroll arrows & edge fade indicators
+  const checkScrollability = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollability();
+    const currentRef = scrollContainerRef.current;
+    if (currentRef) {
+      currentRef.addEventListener('scroll', checkScrollability);
+      window.addEventListener('resize', checkScrollability);
+    }
+    return () => {
+      if (currentRef) {
+        currentRef.removeEventListener('scroll', checkScrollability);
+      }
+      window.removeEventListener('resize', checkScrollability);
+    };
+  }, [selectedCategory]);
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = direction === 'left' ? -320 : 320;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  // Keyboard navigation for tablist
+  const handleKeyDownTab = (e: React.KeyboardEvent, tabId: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleTabChange(tabId);
+    }
+  };
 
   const handleTabChange = (tabId: string) => {
     if (setCurrentTab) setCurrentTab(tabId);
@@ -108,18 +165,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   const handleOpenDeploy = onOpenDeployModal || onOpenDeployBotModal || (() => {});
   const isLight = currentTheme?.mode === 'light';
 
-  // Close mega menu on outside click
+  // Close mega menu on outside click or Escape key
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMegaMenuOpen(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMegaMenuOpen) {
+        setIsMegaMenuOpen(false);
+      }
+    };
     if (isMegaMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isMegaMenuOpen]);
 
@@ -139,8 +203,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   ).length;
   const totalOrdersCount = orders.length;
 
-  // Primary fast tabs grouped by operations
-  const coreBotTabs = [
+  // Group 1: Live Operations (5 modules)
+  const operationsTabs = [
     {
       id: 'chat_bot',
       label: language === 'es' ? 'Bot WhatsApp' : 'WhatsApp Bot',
@@ -163,20 +227,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       inactiveHover: 'hover:border-pink-500/50 hover:bg-pink-950/40 hover:text-pink-300',
       accentColor: 'text-pink-400'
     },
-    {
-      id: 'documentation_guide',
-      label: language === 'es' ? 'Guía & Docs' : 'Guide & Docs',
-      icon: BookOpen,
-      badgeText: 'DOCS',
-      badgeType: 'cyan',
-      activeGradient: 'from-blue-600 via-indigo-600 to-cyan-500',
-      activeBorder: 'border-cyan-400/60 ring-1 ring-cyan-400/40 shadow-cyan-500/30',
-      inactiveHover: 'hover:border-cyan-500/50 hover:bg-cyan-950/40 hover:text-cyan-300',
-      accentColor: 'text-cyan-400'
-    }
-  ];
-
-  const kitchenAndOrderTabs = [
     {
       id: 'kds_cocina',
       label: language === 'es' ? 'Cocina KDS' : 'KDS Kitchen',
@@ -201,7 +251,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
     {
       id: 'analytics',
-      label: language === 'es' ? 'Métricas' : 'Analytics',
+      label: language === 'es' ? 'Métricas ROI' : 'ROI Analytics',
       icon: TrendingUp,
       badgeText: 'ROI',
       badgeType: 'cyan',
@@ -212,8 +262,19 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   ];
 
-  // Expansion & Management Direct Shortcuts
-  const expansionTabs = [
+  // Group 2: Strategy, Franchises & Documentation (4 modules)
+  const strategyTabs = [
+    {
+      id: 'documentation_guide',
+      label: language === 'es' ? 'Guía & Docs' : 'Guide & Docs',
+      icon: BookOpen,
+      badgeText: 'DOCS',
+      badgeType: 'cyan',
+      activeGradient: 'from-blue-600 via-indigo-600 to-cyan-500',
+      activeBorder: 'border-cyan-400/60 ring-1 ring-cyan-400/40 shadow-cyan-500/30',
+      inactiveHover: 'hover:border-cyan-500/50 hover:bg-cyan-950/40 hover:text-cyan-300',
+      accentColor: 'text-cyan-400'
+    },
     {
       id: 'multi_sedes',
       label: language === 'es' ? 'Sedes QR' : 'Branches QR',
@@ -237,6 +298,21 @@ export const Navbar: React.FC<NavbarProps> = ({
       accentColor: 'text-emerald-400'
     },
     {
+      id: 'plan_18_dias',
+      label: language === 'es' ? 'Plan 18 Días' : '18-Day Plan',
+      icon: TrendingUp,
+      badgeText: 'ROADMAP',
+      badgeType: 'indigo',
+      activeGradient: 'from-indigo-600 via-purple-600 to-pink-600',
+      activeBorder: 'border-indigo-400/60 ring-1 ring-indigo-400/40 shadow-indigo-500/30',
+      inactiveHover: 'hover:border-indigo-500/50 hover:bg-indigo-950/40 hover:text-indigo-300',
+      accentColor: 'text-indigo-400'
+    }
+  ];
+
+  // Group 3: Integrations, Inventory & Infrastructure (6 modules)
+  const integrationsTabs = [
+    {
       id: 'workspace_hub',
       label: 'Google Sync',
       icon: FileSpreadsheet,
@@ -257,6 +333,50 @@ export const Navbar: React.FC<NavbarProps> = ({
       activeBorder: 'border-orange-400/60 ring-1 ring-orange-400/40 shadow-orange-500/30',
       inactiveHover: 'hover:border-orange-500/50 hover:bg-orange-950/40 hover:text-orange-300',
       accentColor: 'text-orange-400'
+    },
+    {
+      id: 'n8n_workflows',
+      label: 'Workflows',
+      icon: FolderSync,
+      badgeText: 'N8N',
+      badgeType: 'purple',
+      activeGradient: 'from-fuchsia-600 via-purple-600 to-indigo-600',
+      activeBorder: 'border-purple-400/60 ring-1 ring-purple-400/40 shadow-purple-500/30',
+      inactiveHover: 'hover:border-purple-500/50 hover:bg-purple-950/40 hover:text-purple-300',
+      accentColor: 'text-purple-400'
+    },
+    {
+      id: 'api_catalog',
+      label: 'APIs REST',
+      icon: Globe,
+      badgeText: 'SWAGGER',
+      badgeType: 'cyan',
+      activeGradient: 'from-cyan-600 via-blue-600 to-indigo-600',
+      activeBorder: 'border-cyan-400/60 ring-1 ring-cyan-400/40 shadow-cyan-500/30',
+      inactiveHover: 'hover:border-cyan-500/50 hover:bg-cyan-950/40 hover:text-cyan-300',
+      accentColor: 'text-cyan-400'
+    },
+    {
+      id: 'webhook_logs',
+      label: 'Webhooks',
+      icon: ShieldCheck,
+      badgeText: 'LOGS',
+      badgeType: 'emerald',
+      activeGradient: 'from-emerald-600 via-teal-600 to-cyan-600',
+      activeBorder: 'border-emerald-400/60 ring-1 ring-emerald-400/40 shadow-emerald-500/30',
+      inactiveHover: 'hover:border-emerald-500/50 hover:bg-emerald-950/40 hover:text-emerald-300',
+      accentColor: 'text-emerald-400'
+    },
+    {
+      id: 'config_vault',
+      label: 'Config Vault',
+      icon: Key,
+      badgeText: 'VAULT',
+      badgeType: 'amber',
+      activeGradient: 'from-amber-600 via-orange-600 to-yellow-600',
+      activeBorder: 'border-amber-400/60 ring-1 ring-amber-400/40 shadow-amber-500/30',
+      inactiveHover: 'hover:border-amber-500/50 hover:bg-amber-950/40 hover:text-amber-300',
+      accentColor: 'text-amber-400'
     }
   ];
 
@@ -342,7 +462,29 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
           
           {/* Logo & Brand Identity */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Corner Hamburger Drawer Toggle Button */}
+            <button
+              onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
+              className={`p-2 rounded-xl border transition-all flex items-center gap-1.5 active:scale-95 ${
+                isMegaMenuOpen
+                  ? 'bg-indigo-600 border-indigo-400 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-400/40'
+                  : 'bg-slate-900/90 border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-800'
+              }`}
+              title="Abrir menú desplegable de módulos"
+              aria-label="Abrir Menú de Módulos"
+              aria-expanded={isMegaMenuOpen}
+            >
+              {isMegaMenuOpen ? (
+                <X className="w-5 h-5 text-white" />
+              ) : (
+                <Menu className="w-5 h-5 text-amber-400 animate-pulse" />
+              )}
+              <span className="hidden md:inline text-xs font-black tracking-tight">
+                {language === 'es' ? 'Módulos' : 'Modules'}
+              </span>
+            </button>
+
             <div 
               onClick={() => handleTabChange('chat_bot')}
               className="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-indigo-600 to-emerald-400 text-white shadow-md shadow-indigo-500/25 ring-1 ring-white/20 cursor-pointer hover:scale-105 transition-transform"
@@ -416,7 +558,28 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action Tools: Deploy Bot, Currency, Lang, Theme, Role, Drive */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            
+            {/* Offline/Online Firestore Status Badge */}
+            {(!isOnline || pendingSyncCount > 0) && (
+              <button
+                onClick={onForceSync}
+                disabled={isSyncing || !isOnline}
+                title={!isOnline ? 'Modo Offline: Los pedidos se guardan localmente' : `${pendingSyncCount} cambios pendientes por sincronizar en Firestore`}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-[11px] font-black transition-all active:scale-95 ${
+                  !isOnline
+                    ? 'bg-amber-950/80 border-amber-500/50 text-amber-300 animate-pulse'
+                    : 'bg-indigo-950/80 border-indigo-500/50 text-indigo-200'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${!isOnline ? 'bg-amber-400' : 'bg-emerald-400'} animate-ping`} />
+                <span className="hidden sm:inline">{!isOnline ? 'Offline' : 'Sync'}</span>
+                {pendingSyncCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-indigo-500 text-white text-[10px]">
+                    {pendingSyncCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {/* Deploy New Bot Primary CTA */}
             <button
               onClick={handleOpenDeploy}
@@ -540,38 +703,131 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* SECOND ROW: ADVANCED CSS3 FLEXBOX & GROUPED WRAPPER NAVIGATION PANEL */}
+      {/* SECOND ROW: ADVANCED CSS3 WRAPPER NAVIGATION PANEL ACCESSIBLE ON PC, TABLET & MOBILE */}
       <nav 
-        aria-label="Navegación Principal de Módulos"
-        className="border-t border-slate-800/90 bg-slate-950/90 backdrop-blur-md px-2 py-1.5 sm:px-4 relative"
+        id="navbar-modules-panel"
+        aria-label="Panel de Navegación de Módulos"
+        className="nav-master-container"
       >
-        <div className="max-w-7xl mx-auto flex flex-wrap lg:flex-nowrap items-center justify-between gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+        {/* Category Quick Selector Filter Pills (Accessible on PC, Tablet & Mobile) */}
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 pt-1.5 pb-1 flex items-center justify-between gap-1 sm:gap-2 border-b border-slate-800/60">
+          <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none py-0.5" role="toolbar" aria-label="Filtro de categorías de módulos">
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`nav-cat-pill ${
+                selectedCategory === 'all'
+                  ? 'bg-indigo-600 text-white shadow-xs border-indigo-400/50'
+                  : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border-slate-800'
+              }`}
+              title="Mostrar todos los 15 módulos"
+            >
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span>Todos</span>
+              <span className="text-[9px] px-1 py-0.2 rounded-full bg-black/30 font-mono font-bold">15</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedCategory('operations')}
+              className={`nav-cat-pill ${
+                selectedCategory === 'operations'
+                  ? 'bg-emerald-600 text-white shadow-xs border-emerald-400/50'
+                  : 'bg-slate-900/80 text-slate-400 hover:text-emerald-300 hover:bg-emerald-950/40 border-slate-800'
+              }`}
+              title="Filtrar por módulos de Operaciones en Vivo"
+            >
+              <ChefHat className="w-3 h-3 text-emerald-400" />
+              <span>Operaciones</span>
+              <span className="text-[9px] px-1 py-0.2 rounded-full bg-black/30 font-mono font-bold">5</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedCategory('expansion')}
+              className={`nav-cat-pill ${
+                selectedCategory === 'expansion'
+                  ? 'bg-purple-600 text-white shadow-xs border-purple-400/50'
+                  : 'bg-slate-900/80 text-slate-400 hover:text-purple-300 hover:bg-purple-950/40 border-slate-800'
+              }`}
+              title="Filtrar por Franquicias, Estrategia y Documentación"
+            >
+              <Sparkles className="w-3 h-3 text-purple-400" />
+              <span>Estrategia & Docs</span>
+              <span className="text-[9px] px-1 py-0.2 rounded-full bg-black/30 font-mono font-bold">4</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedCategory('integrations')}
+              className={`nav-cat-pill ${
+                selectedCategory === 'integrations'
+                  ? 'bg-amber-600 text-white shadow-xs border-amber-400/50'
+                  : 'bg-slate-900/80 text-slate-400 hover:text-amber-300 hover:bg-amber-950/40 border-slate-800'
+              }`}
+              title="Filtrar por Google Sync, Inventario y APIs Cloud"
+            >
+              <FolderSync className="w-3 h-3 text-amber-400" />
+              <span>Integraciones & Cloud</span>
+              <span className="text-[9px] px-1 py-0.2 rounded-full bg-black/30 font-mono font-bold">6</span>
+            </button>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-2 text-[11px] text-slate-400 font-medium shrink-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-slate-300">15 Módulos Conectados</span>
+          </div>
+        </div>
+
+        {/* Horizontal Scroll Track Wrapper with Left/Right Precision Navigation Controls */}
+        <div className="nav-scroll-wrapper relative group/scroll">
           
-          {/* GROUP 1: MEGA-MENU + CORE BOT & STUDIO & DOCS WRAPPER */}
-          <div className="nav-pill-wrapper shrink-0 shadow-inner">
-            
+          {/* Scroll Left Button */}
+          {canScrollLeft && (
+            <button
+              onClick={() => handleScroll('left')}
+              aria-label="Desplazar menú hacia la izquierda"
+              className="nav-scroll-arrow nav-scroll-arrow-left"
+              title="Desplazar a la izquierda"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Main Horizontal Tab Track with Accessibility Roles */}
+          <div
+            ref={scrollContainerRef}
+            role="tablist"
+            aria-label="Lista de pestañas de módulos del sistema"
+            className="nav-scroll-track"
+          >
             {/* MEGA MENU TRIGGER BUTTON */}
-            <div className="relative" ref={menuRef}>
+            <div className="relative shrink-0" ref={menuRef}>
               <button
+                id="mega-menu-trigger"
                 onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
+                aria-haspopup="true"
+                aria-expanded={isMegaMenuOpen}
+                aria-label="Abrir explorador de los 15 módulos del sistema"
                 className={`nav-micro-btn ${
                   isMegaMenuOpen
                     ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400/50'
                     : 'bg-slate-900 text-indigo-300 hover:text-white border border-indigo-500/40 hover:border-indigo-400 hover:bg-indigo-950/60 shadow-xs'
                 }`}
-                title="Abrir Explorador de los 14 Módulos"
+                title="Explorar todos los 15 módulos con buscador"
               >
                 <div className="p-0.5 rounded-md bg-indigo-500/20 text-indigo-300">
                   <Activity className="w-3.5 h-3.5" />
                 </div>
-                <span className="tracking-tight whitespace-nowrap">Módulos</span>
-                <span className="nav-micro-badge bg-indigo-500/30 text-indigo-200 border border-indigo-400/40">14</span>
+                <span className="tracking-tight whitespace-nowrap font-bold">Módulos</span>
+                <span className="nav-micro-badge bg-indigo-500/30 text-indigo-200 border border-indigo-400/40">15</span>
                 <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isMegaMenuOpen ? 'rotate-180 text-white' : 'text-indigo-400'}`} />
               </button>
 
-              {/* RENOVATED MEGA-DROPDOWN MENU */}
+              {/* RENOVATED MEGA-DROPDOWN MENU MODAL */}
               {isMegaMenuOpen && (
-                <div className="absolute top-full left-0 mt-2.5 w-[330px] sm:w-[580px] md:w-[740px] lg:w-[860px] p-4 sm:p-5 rounded-3xl bg-slate-900/98 border border-indigo-500/40 shadow-2xl shadow-black/90 backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-3.5">
+                <div 
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Catálogo completo de módulos"
+                  className="absolute top-full left-0 mt-2.5 w-[330px] sm:w-[580px] md:w-[740px] lg:w-[860px] p-4 sm:p-5 rounded-3xl bg-slate-900/98 border border-indigo-500/40 shadow-2xl shadow-black/90 backdrop-blur-2xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-3.5"
+                >
                   
                   {/* Search inside Mega Menu */}
                   <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -579,7 +835,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400" />
                       <input
                         type="text"
-                        placeholder="Buscar módulo (ej: Cocina, Sheets, Prompts, Kardex, APIs, QR)..."
+                        placeholder="Buscar módulo (ej: Cocina, Sheets, Prompts, Kardex, APIs, QR, Facturas)..."
                         value={menuSearchQuery}
                         onChange={(e) => setMenuSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-700/80 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
@@ -589,6 +845,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <button
                       onClick={() => setIsMegaMenuOpen(false)}
                       className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                      title="Cerrar (Esc)"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -658,7 +915,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="pt-2.5 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
                     <span className="flex items-center gap-1.5 text-[11px]">
                       <Zap className="w-3.5 h-3.5 text-amber-400" />
-                      <span>14 módulos activos • Nómada Experiences LATAM</span>
+                      <span>15 módulos activos • Nómada Experiences LATAM</span>
                     </span>
                     <button
                       onClick={() => handleTabChange('documentation_guide')}
@@ -672,73 +929,139 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* FAST ACCESS CORE BOT TABS */}
-            {coreBotTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTabId === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`nav-micro-btn group ${
-                    isActive
-                      ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-md ${tab.activeBorder}`
-                      : `bg-slate-950/70 text-slate-200 border border-slate-800/80 ${tab.inactiveHover} shadow-xs`
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.accentColor}`} />
-                  <span className="tracking-tight whitespace-nowrap">{tab.label}</span>
-                  {renderBadge(tab.badgeText, tab.badgeType, isActive)}
-                </button>
-              );
-            })}
+            {/* GROUP 1: OPERACIONES EN VIVO (5 MÓDULOS) */}
+            {(selectedCategory === 'all' || selectedCategory === 'operations') && (
+              <div 
+                className="nav-pill-wrapper"
+                role="group"
+                aria-label="Módulos de Operaciones en Vivo"
+              >
+                <div className="hidden xl:flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-950/60 rounded-md border border-emerald-500/30">
+                  <ChefHat className="w-3 h-3 text-emerald-400" />
+                  <span>Operaciones</span>
+                </div>
+
+                {operationsTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTabId === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      id={`tab-btn-${tab.id}`}
+                      role="tab"
+                      aria-selected={isActive}
+                      aria-label={tab.label}
+                      tabIndex={0}
+                      onClick={() => handleTabChange(tab.id)}
+                      onKeyDown={(e) => handleKeyDownTab(e, tab.id)}
+                      className={`nav-micro-btn group ${
+                        isActive
+                          ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-md ${tab.activeBorder}`
+                          : `bg-slate-950/70 text-slate-200 border border-slate-800/80 ${tab.inactiveHover} shadow-xs`
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.accentColor}`} />
+                      <span className="tracking-tight whitespace-nowrap">{tab.label}</span>
+                      {renderBadge(tab.badgeText, tab.badgeType, isActive)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* GROUP 2: FRANQUICIAS, ESTRATEGIA & DOCS (4 MÓDULOS) */}
+            {(selectedCategory === 'all' || selectedCategory === 'expansion') && (
+              <div 
+                className="nav-pill-wrapper"
+                role="group"
+                aria-label="Módulos de Estrategia y Franquicias"
+              >
+                <div className="hidden xl:flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-950/60 rounded-md border border-purple-500/30">
+                  <Sparkles className="w-3 h-3 text-purple-400" />
+                  <span>Estrategia</span>
+                </div>
+
+                {strategyTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTabId === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      id={`tab-btn-${tab.id}`}
+                      role="tab"
+                      aria-selected={isActive}
+                      aria-label={tab.label}
+                      tabIndex={0}
+                      onClick={() => handleTabChange(tab.id)}
+                      onKeyDown={(e) => handleKeyDownTab(e, tab.id)}
+                      className={`nav-micro-btn group ${
+                        isActive
+                          ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-md ${tab.activeBorder}`
+                          : `bg-slate-950/70 text-slate-200 border border-slate-800/80 ${tab.inactiveHover} shadow-xs`
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.accentColor}`} />
+                      <span className="tracking-tight whitespace-nowrap">{tab.label}</span>
+                      {renderBadge(tab.badgeText, tab.badgeType, isActive)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* GROUP 3: INTEGRACIONES, INVENTARIO & CLOUD (6 MÓDULOS) */}
+            {(selectedCategory === 'all' || selectedCategory === 'integrations') && (
+              <div 
+                className="nav-pill-wrapper"
+                role="group"
+                aria-label="Módulos de Integraciones y Cloud"
+              >
+                <div className="hidden xl:flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-950/60 rounded-md border border-amber-500/30">
+                  <FolderSync className="w-3 h-3 text-amber-400" />
+                  <span>Cloud & APIs</span>
+                </div>
+
+                {integrationsTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTabId === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      id={`tab-btn-${tab.id}`}
+                      role="tab"
+                      aria-selected={isActive}
+                      aria-label={tab.label}
+                      tabIndex={0}
+                      onClick={() => handleTabChange(tab.id)}
+                      onKeyDown={(e) => handleKeyDownTab(e, tab.id)}
+                      className={`nav-micro-btn group ${
+                        isActive
+                          ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-md ${tab.activeBorder}`
+                          : `bg-slate-950/70 text-slate-200 border border-slate-800/80 ${tab.inactiveHover} shadow-xs`
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.accentColor}`} />
+                      <span className="tracking-tight whitespace-nowrap">{tab.label}</span>
+                      {renderBadge(tab.badgeText, tab.badgeType, isActive)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
           </div>
 
-          {/* GROUP 2: KITCHEN & ORDER OPERATIONS WRAPPER */}
-          <div className="nav-pill-wrapper shrink-0 shadow-inner">
-            {kitchenAndOrderTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTabId === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`nav-micro-btn group ${
-                    isActive
-                      ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-md ${tab.activeBorder}`
-                      : `bg-slate-950/70 text-slate-200 border border-slate-800/80 ${tab.inactiveHover} shadow-xs`
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.accentColor}`} />
-                  <span className="tracking-tight whitespace-nowrap">{tab.label}</span>
-                  {renderBadge(tab.badgeText, tab.badgeType, isActive)}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* GROUP 3: EXPANSION & INTEGRATION SHORTCUTS WRAPPER */}
-          <div className="nav-pill-wrapper shrink-0 shadow-inner hidden md:flex">
-            {expansionTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTabId === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`nav-micro-btn group ${
-                    isActive
-                      ? `bg-gradient-to-r ${tab.activeGradient} text-white shadow-md ${tab.activeBorder}`
-                      : `bg-slate-950/70 text-slate-300 border border-slate-800/80 ${tab.inactiveHover} hover:text-white shadow-xs`
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : tab.accentColor}`} />
-                  <span className="whitespace-nowrap">{tab.label}</span>
-                  {renderBadge(tab.badgeText, tab.badgeType, isActive)}
-                </button>
-              );
-            })}
-          </div>
+          {/* Scroll Right Button */}
+          {canScrollRight && (
+            <button
+              onClick={() => handleScroll('right')}
+              aria-label="Desplazar menú hacia la derecha"
+              className="nav-scroll-arrow nav-scroll-arrow-right"
+              title="Desplazar a la derecha"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
 
         </div>
       </nav>

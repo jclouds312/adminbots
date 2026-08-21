@@ -28,14 +28,26 @@ import {
   ArrowRight,
   Database,
   Cloud,
-  CheckCheck
+  CheckCheck,
+  Utensils,
+  Bot,
+  X
 } from 'lucide-react';
-import { RestaurantContact, GoogleDocRecord } from '../types';
+import { RestaurantContact, GoogleDocRecord, FranchiseBrand, BranchSede } from '../types';
 import { useLanguage } from '../context/LanguageContext';
+import { 
+  uploadBotConfigBackupToDrive, 
+  uploadDigitalMenuToDrive, 
+  createGoogleDriveFolder, 
+  uploadFileToGoogleDrive 
+} from '../services/googleDriveService';
 
 interface WorkspaceHubViewProps {
   onOpenPicker: () => void;
   onNavigateToTab?: (tab: any) => void;
+  brands?: FranchiseBrand[];
+  selectedBrand?: FranchiseBrand;
+  selectedSede?: BranchSede;
 }
 
 interface DriveFolder {
@@ -63,10 +75,21 @@ interface DriveFileRecord {
   createdTime: string;
 }
 
-export const WorkspaceHubView: React.FC<WorkspaceHubViewProps> = ({ onOpenPicker, onNavigateToTab }) => {
+export const WorkspaceHubView: React.FC<WorkspaceHubViewProps> = ({ 
+  onOpenPicker, 
+  onNavigateToTab,
+  brands: initialBrands,
+  selectedBrand: initialSelectedBrand,
+  selectedSede: initialSelectedSede
+}) => {
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'folders' | 'drive' | 'sheets' | 'contacts'>('folders');
   
+  // Brands & Sedes State
+  const [localBrands, setLocalBrands] = useState<FranchiseBrand[]>(initialBrands || []);
+  const [selectedBrandState, setSelectedBrandState] = useState<FranchiseBrand | null>(initialSelectedBrand || null);
+  const [selectedSedeState, setSelectedSedeState] = useState<BranchSede | null>(initialSelectedSede || null);
+
   // Google Drive State
   const [driveFiles, setDriveFiles] = useState<DriveFileRecord[]>([]);
   const [driveFolders, setDriveFolders] = useState<DriveFolder[]>([]);
@@ -74,6 +97,14 @@ export const WorkspaceHubView: React.FC<WorkspaceHubViewProps> = ({ onOpenPicker
   const [selectedFileFilter, setSelectedFileFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Custom Upload Modal State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadCategory, setUploadCategory] = useState<'bot_config' | 'menu_digital' | 'both'>('bot_config');
+  const [uploadBrandId, setUploadBrandId] = useState<string>('');
+  const [uploadSedeId, setUploadSedeId] = useState<string>('');
+  const [uploadFolderId, setUploadFolderId] = useState<string>('folder_backups');
+  const [isUploadingCustom, setIsUploadingCustom] = useState(false);
+
   // Action Loading States
   const [isBackingUpBots, setIsBackingUpBots] = useState(false);
   const [isBackingUpLogs, setIsBackingUpLogs] = useState(false);
@@ -95,11 +126,44 @@ export const WorkspaceHubView: React.FC<WorkspaceHubViewProps> = ({ onOpenPicker
   const [sheetsRowsCount, setSheetsRowsCount] = useState(38);
   const [lastSyncedTime, setLastSyncedTime] = useState<string>('Hace 1 minuto');
 
-  // Load drive folders & files on mount
+  // Load drive folders, files & brands on mount
   useEffect(() => {
     fetchDriveFolders();
     fetchDriveFiles();
-  }, []);
+    if (!initialBrands || initialBrands.length === 0) {
+      fetchBrands();
+    } else {
+      setLocalBrands(initialBrands);
+      if (!selectedBrandState && initialBrands[0]) {
+        setSelectedBrandState(initialBrands[0]);
+        setUploadBrandId(initialBrands[0].id);
+        if (initialBrands[0].branches?.[0]) {
+          setSelectedSedeState(initialBrands[0].branches[0]);
+          setUploadSedeId(initialBrands[0].branches[0].sede_id);
+        }
+      }
+    }
+  }, [initialBrands]);
+
+  const fetchBrands = async () => {
+    try {
+      const res = await fetch('/api/brands');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setLocalBrands(data);
+          setSelectedBrandState(data[0]);
+          setUploadBrandId(data[0].id);
+          if (data[0].branches?.[0]) {
+            setSelectedSedeState(data[0].branches[0]);
+            setUploadSedeId(data[0].branches[0].sede_id);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Error loading brands for Drive sync:', err);
+    }
+  };
 
   const showNotification = (msg: string) => {
     setActionSuccessMessage(msg);
@@ -284,6 +348,75 @@ export const WorkspaceHubView: React.FC<WorkspaceHubViewProps> = ({ onOpenPicker
     }
   };
 
+  const handleCustomUploadToDrive = async () => {
+    const targetBrand = localBrands.find(b => b.id === uploadBrandId) || localBrands[0] || selectedBrandState;
+    const targetSede = targetBrand?.branches?.find(s => s.sede_id === uploadSedeId) || targetBrand?.branches?.[0] || selectedSedeState;
+
+    if (!targetBrand || !targetSede) {
+      showNotification('Selecciona una marca y sede válida para respaldar.');
+      return;
+    }
+
+    setIsUploadingCustom(true);
+    try {
+      if (uploadCategory === 'bot_config' || uploadCategory === 'both') {
+        const botResult = await uploadBotConfigBackupToDrive({
+          brand: targetBrand,
+          sede: targetSede,
+          folderId: uploadFolderId
+        });
+        if (botResult.success) {
+          const newDriveFile: DriveFileRecord = {
+            id: botResult.fileId,
+            name: botResult.fileName,
+            mimeType: botResult.mimeType,
+            webViewLink: botResult.webViewLink,
+            size: botResult.size || '2.4 KB',
+            fileType: 'backup_general',
+            folderId: uploadFolderId,
+            sede_id: targetSede.sede_id,
+            sede_nombre: targetSede.nombre_sede,
+            createdTime: new Date().toISOString()
+          };
+          setDriveFiles(prev => [newDriveFile, ...prev]);
+        }
+      }
+
+      if (uploadCategory === 'menu_digital' || uploadCategory === 'both') {
+        const menuResult = await uploadDigitalMenuToDrive({
+          brand: targetBrand,
+          sede: targetSede,
+          menuItems: targetSede.menu || [],
+          folderId: uploadFolderId
+        });
+        if (menuResult.success) {
+          const newDriveFile: DriveFileRecord = {
+            id: menuResult.fileId,
+            name: menuResult.fileName,
+            mimeType: menuResult.mimeType,
+            webViewLink: menuResult.webViewLink,
+            size: menuResult.size || '3.1 KB',
+            fileType: 'menu_digital',
+            folderId: uploadFolderId,
+            sede_id: targetSede.sede_id,
+            sede_nombre: targetSede.nombre_sede,
+            createdTime: new Date().toISOString()
+          };
+          setDriveFiles(prev => [newDriveFile, ...prev]);
+        }
+      }
+
+      fetchDriveFolders();
+      setIsUploadModalOpen(false);
+      showNotification(`Respaldo de ${targetBrand.name} subido exitosamente a Google Drive.`);
+    } catch (err: any) {
+      console.error('Error in custom Drive upload:', err);
+      showNotification('Hubo un error al subir el archivo a Google Drive.');
+    } finally {
+      setIsUploadingCustom(false);
+    }
+  };
+
   const handleRestoreBackup = async (file: DriveFileRecord) => {
     try {
       const res = await fetch('/api/drive/restore-backup', {
@@ -444,6 +577,15 @@ export const WorkspaceHubView: React.FC<WorkspaceHubViewProps> = ({ onOpenPicker
 
         {/* Quick OAuth Picker & Folder Connect */}
         <div className="flex items-center gap-2 flex-wrap w-full md:w-auto">
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black transition-all shadow-md shadow-amber-500/20"
+            title="Subir Configuración de Bots y Menú Digital a Google Drive"
+          >
+            <UploadCloud className="w-4 h-4 text-slate-950" />
+            <span>+ Subir Respaldo a Drive</span>
+          </button>
+
           <button
             onClick={() => setIsCreateFolderOpen(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold border border-slate-700 transition-colors shadow-xs"
@@ -1069,6 +1211,178 @@ export const WorkspaceHubView: React.FC<WorkspaceHubViewProps> = ({ onOpenPicker
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM DRIVE BACKUP & MENU UPLOAD MODAL */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg p-5 sm:p-6 rounded-3xl bg-slate-900 border border-amber-500/40 shadow-2xl space-y-4 text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+                  <UploadCloud className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">Subir a Google Drive</h4>
+                  <p className="text-[11px] text-slate-400">Respaldar bots de IA y menús digitales en tus carpetas</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsUploadModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5">
+              {/* Category Selector */}
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">¿Qué deseas subir?</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setUploadCategory('bot_config')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                      uploadCategory === 'bot_config'
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-xs'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <Bot className="w-4 h-4" />
+                    <span>Config de Bot</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setUploadCategory('menu_digital')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                      uploadCategory === 'menu_digital'
+                        ? 'bg-purple-500/20 border-purple-500 text-purple-300 shadow-xs'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <Utensils className="w-4 h-4" />
+                    <span>Menú Digital</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setUploadCategory('both')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                      uploadCategory === 'both'
+                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-xs'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <Layers className="w-4 h-4" />
+                    <span>Paquete 360°</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Brand & Restaurant Selector */}
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Restaurante / Marca</label>
+                <select
+                  value={uploadBrandId}
+                  onChange={(e) => {
+                    setUploadBrandId(e.target.value);
+                    const b = localBrands.find(brand => brand.id === e.target.value);
+                    if (b && b.branches?.[0]) {
+                      setUploadSedeId(b.branches[0].sede_id);
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                >
+                  {localBrands.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({b.country} • {b.currency})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sede Selector */}
+              {(() => {
+                const currentBrand = localBrands.find(b => b.id === uploadBrandId) || localBrands[0];
+                const sedesList = currentBrand?.branches || [];
+                return (
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">Sede Operativa</label>
+                    <select
+                      value={uploadSedeId}
+                      onChange={(e) => setUploadSedeId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                    >
+                      {sedesList.map((s) => (
+                        <option key={s.sede_id} value={s.sede_id}>
+                          {s.nombre_sede} ({s.ciudad} • {s.telefono_whatsapp})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })()}
+
+              {/* Destination Folder Selector */}
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Carpeta de Destino en Google Drive</label>
+                <select
+                  value={uploadFolderId}
+                  onChange={(e) => setUploadFolderId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none focus:border-amber-500"
+                >
+                  <option value="folder_backups">📁 Backups de Configuración de Bots</option>
+                  <option value="folder_menus">📁 Menús & Cartas Digitales Gastronómicas</option>
+                  <option value="folder_logs">📁 Logs de Pedidos WhatsApp WABA</option>
+                  <option value="folder_root_001">📁 Raíz de Google Drive</option>
+                  {driveFolders.filter(f => !['folder_backups', 'folder_menus', 'folder_logs', 'folder_root_001'].includes(f.id)).map(f => (
+                    <option key={f.id} value={f.id}>
+                      📁 {f.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Info banner */}
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-200/90 flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  El archivo se exportará en formato JSON estructurado y sincronizado en tu espacio de Google Drive. Podrás restaurarlo o compartirlo en cualquier momento.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsUploadModalOpen(false)}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleCustomUploadToDrive}
+                disabled={isUploadingCustom}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-amber-500/20 disabled:opacity-50"
+              >
+                {isUploadingCustom ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Subiendo a Google Drive...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4" />
+                    <span>Subir a Mi Google Drive</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
