@@ -36,7 +36,8 @@ import {
   ChevronRight,
   Filter,
   Menu,
-  LayoutDashboard
+  LayoutDashboard,
+  BellRing
 } from 'lucide-react';
 import { FranchiseBrand, RestaurantSede, UserProfile, AppThemeConfig, NavigationTabId, Order } from '../types';
 import { FRANCHISE_BRANDS } from '../data/franchisesAndPlatforms';
@@ -74,6 +75,8 @@ interface NavbarProps {
   pendingSyncCount?: number;
   isSyncing?: boolean;
   onForceSync?: () => void;
+  onOpenPushModal?: () => void;
+  unreadPushCount?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -104,7 +107,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   isOnline = true,
   pendingSyncCount = 0,
   isSyncing = false,
-  onForceSync
+  onForceSync,
+  onOpenPushModal,
+  unreadPushCount = 0
 }) => {
   const { t, language, toggleLanguage } = useLanguage();
   const activeTabId = currentTab || activeTab || 'chat_bot';
@@ -645,6 +650,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Palette className="w-4 h-4 text-indigo-400" />
             </button>
+
+            {/* FCM Push Notifications Manager Trigger */}
+            {onOpenPushModal && (
+              <button
+                onClick={onOpenPushModal}
+                title="Centro de Notificaciones Push FCM (2do Plano)"
+                className="relative p-2 rounded-xl border border-amber-500/50 bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 transition-all shadow-xs active:scale-95 group"
+              >
+                <BellRing className="w-4 h-4 text-amber-400 group-hover:animate-bounce" />
+                {unreadPushCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-black text-white ring-2 ring-slate-900 animate-pulse">
+                    {unreadPushCount > 9 ? '9+' : unreadPushCount}
+                  </span>
+                )}
+                <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-400 animate-ping opacity-75" />
+              </button>
+            )}
 
             {/* Role Profile Switcher */}
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-indigo-500/40 bg-indigo-950/50 text-xs text-indigo-200 shadow-xs">

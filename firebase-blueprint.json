@@ -137,6 +137,39 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["key", "updatedAt"]
+    },
+    "FcmToken": {
+      "title": "FcmToken",
+      "description": "Registro de tokens FCM para notificaciones push en segundo plano a administradores",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "token": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "deviceType": { "type": "string" },
+        "userAgent": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "enabledChannels": { "type": "string" }
+      },
+      "required": ["id", "token", "userId", "updatedAt"]
+    },
+    "NotificationLog": {
+      "title": "NotificationLog",
+      "description": "Registro histórico de alertas y notificaciones push enviadas por FCM a dispositivos",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "type": { "type": "string" },
+        "orderId": { "type": "string" },
+        "sedeId": { "type": "string" },
+        "status": { "type": "string" },
+        "sentAt": { "type": "string" }
+      },
+      "required": ["id", "title", "body", "type", "sentAt"]
     }
   },
   "firestore": {
@@ -171,6 +204,14 @@
     "/app_settings/{settingId}": {
       "schema": { "$ref": "#/entities/AppSetting" },
       "description": "Credenciales y configuraciones persistentes del restaurante"
+    },
+    "/fcm_tokens/{tokenId}": {
+      "schema": { "$ref": "#/entities/FcmToken" },
+      "description": "Tokens de registro FCM de dispositivos de administradores"
+    },
+    "/notification_logs/{logId}": {
+      "schema": { "$ref": "#/entities/NotificationLog" },
+      "description": "Historial de notificaciones push enviadas"
     }
   }
 }

@@ -29,7 +29,8 @@ import {
   Store,
   ChevronDown,
   ChevronUp,
-  SlidersHorizontal
+  SlidersHorizontal,
+  X
 } from 'lucide-react';
 import { Order, OrderStatus, BranchSede } from '../types';
 import { usePreparationThresholdAlert } from '../hooks/usePreparationThresholdAlert';
@@ -43,6 +44,8 @@ interface KdsViewProps {
   pendingSyncCount?: number;
   isSyncing?: boolean;
   onForceSync?: () => void;
+  highlightedOrderId?: string | null;
+  onClearHighlight?: () => void;
 }
 
 type KitchenStation = 'all' | 'grill' | 'fryer' | 'assembly' | 'packing';
@@ -54,7 +57,9 @@ export const KdsView: React.FC<KdsViewProps> = ({
   isOnline = true,
   pendingSyncCount = 0,
   isSyncing = false,
-  onForceSync
+  onForceSync,
+  highlightedOrderId,
+  onClearHighlight
 }) => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'en_cocina' | 'listo_cocina' | 'delayed'>('all');
   const [selectedStation, setSelectedStation] = useState<KitchenStation>('all');
@@ -63,6 +68,28 @@ export const KdsView: React.FC<KdsViewProps> = ({
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [expandedRecipes, setExpandedRecipes] = useState<Record<string, boolean>>({});
   const [simulatedAlerts, setSimulatedAlerts] = useState<Record<string, string>>({});
+
+  // Auto-scroll and adjust filter when an order is opened with preloaded context
+  const highlightedOrder = highlightedOrderId
+    ? orders.find(o => o.pedido_id === highlightedOrderId || o.id === highlightedOrderId)
+    : null;
+
+  React.useEffect(() => {
+    if (highlightedOrderId && highlightedOrder) {
+      if (selectedSedeFilter !== 'all' && highlightedOrder.sede_id !== selectedSedeFilter) {
+        setSelectedSedeFilter('all');
+      }
+      if (filterStatus !== 'all') {
+        setFilterStatus('all');
+      }
+      setTimeout(() => {
+        const el = document.getElementById(`kds-order-card-${highlightedOrderId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 150);
+    }
+  }, [highlightedOrderId, highlightedOrder]);
 
   // Visual and Audio Notification Hook for Preparation Time Threshold
   const {
@@ -209,6 +236,53 @@ export const KdsView: React.FC<KdsViewProps> = ({
               <span>{isSyncing ? 'Sincronizando Firestore...' : 'Sincronizar Ahora'}</span>
             </button>
           )}
+        </div>
+      )}
+
+      {/* Preloaded Context Banner (when navigated from Notification Banner) */}
+      {highlightedOrder && (
+        <div 
+          id="kds-preloaded-order-context-banner"
+          className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950/90 via-amber-950/60 to-slate-900 border-2 border-amber-500/80 shadow-2xl shadow-amber-500/10 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in slide-in-from-top-2"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/30 shrink-0">
+              <Sparkles className="w-5 h-5 animate-spin" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-black uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/40">
+                  📌 Contexto Precargado desde Notificación
+                </span>
+                <span className="text-xs font-mono font-bold text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                  #{highlightedOrder.pedido_id}
+                </span>
+              </div>
+              <p className="text-xs text-slate-200 mt-1">
+                Cliente: <strong className="text-white">{highlightedOrder.nombre_cliente}</strong> • Sede: <strong className="text-white">{highlightedOrder.nombre_sede}</strong> • Total: <strong className="text-emerald-400">${highlightedOrder.total.toFixed(2)} {highlightedOrder.moneda}</strong> • Items: <strong className="text-amber-300">{highlightedOrder.items.length}</strong>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+            <button
+              onClick={() => onOpenInvoiceModal(highlightedOrder)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all"
+            >
+              <Receipt className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Ver Factura</span>
+            </button>
+
+            {onClearHighlight && (
+              <button
+                onClick={onClearHighlight}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 transition-all active:scale-95"
+              >
+                <span>Mostrar Todas</span>
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -419,6 +493,7 @@ export const KdsView: React.FC<KdsViewProps> = ({
           {kitchenOrders.map((order) => {
             const isReady = order.estado === 'listo_cocina';
             const isPreparing = order.estado === 'en_cocina';
+            const isHighlighted = order.pedido_id === highlightedOrderId || order.id === highlightedOrderId;
             const { isOverdue, minutesElapsed, minutesOverdue } = getOrderOverdueInfo(order);
 
             // Timer urgency color
@@ -436,13 +511,26 @@ export const KdsView: React.FC<KdsViewProps> = ({
                 key={order.pedido_id}
                 id={`kds-order-card-${order.pedido_id}`}
                 className={`rounded-3xl border transition-all flex flex-col justify-between overflow-hidden shadow-xl ${
-                  isOverdue
+                  isHighlighted
+                    ? 'bg-gradient-to-b from-amber-950/40 via-slate-900/95 to-slate-900 border-amber-400 ring-4 ring-amber-400/80 shadow-2xl shadow-amber-500/30 scale-[1.01]'
+                    : isOverdue
                     ? 'bg-gradient-to-b from-rose-950/40 to-slate-900/95 border-rose-500/80 ring-2 ring-rose-500/40 shadow-rose-950/40'
                     : isReady
                     ? 'bg-slate-900/95 border-emerald-500/50 ring-1 ring-emerald-500/30'
                     : 'bg-[#1E293B]/90 border-slate-800 hover:border-slate-700'
                 }`}
               >
+                {/* Highlighted Ribbon from Notification Redirection */}
+                {isHighlighted && (
+                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 px-3 py-1.5 text-xs font-black uppercase tracking-wider flex items-center justify-between shadow-md">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 animate-spin" />
+                      <span>Comanda Enfocada desde Notificación</span>
+                    </span>
+                    <span className="font-mono font-bold text-slate-900">#{order.pedido_id}</span>
+                  </div>
+                )}
+
                 {/* Simulated WhatsApp notification toast */}
                 {alertMsg && (
                   <div className="bg-emerald-600 text-slate-950 px-3 py-1.5 text-xs font-black flex items-center justify-between animate-fadeIn">

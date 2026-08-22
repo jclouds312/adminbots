@@ -52,6 +52,7 @@ import { FRANCHISE_BRANDS } from '../data/franchisesAndPlatforms';
 import { D3WeeklySalesTrend } from './d3/D3WeeklySalesTrend';
 import { D3SedeDistribution } from './d3/D3SedeDistribution';
 import { PYTHON_ANALYTICS_SCRIPTS, POWER_BI_CONFIG } from '../services/kardexStorageService';
+import { BusinessGrowthWidgets } from './BusinessGrowthWidgets';
 
 interface AnalyticsViewProps {
   orders: Order[];
@@ -70,7 +71,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   currentCurrency,
   onSyncGoogleSheets
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'python' | 'powerbi' | 'sedes_matrix'>('dashboard');
+  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'growth' | 'sales' | 'sedes' | 'audit'>('dashboard');
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'year'>('today');
   const [filterSedeId, setFilterSedeId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'cancelled' | 'annulled'>('all');
@@ -450,7 +451,79 @@ EFICIENCIA ESTIMADA: Reducción del 34% en tiempo de entrega y ahorro de $18.50 
         </div>
       </div>
 
+      {/* Analytics Sub-navigation Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs scrollbar-none">
+        <button
+          id="tab-analytics-dashboard"
+          onClick={() => setActiveSubTab('dashboard')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all whitespace-nowrap ${
+            activeSubTab === 'dashboard'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4" />
+          <span>Panel General</span>
+        </button>
+
+        <button
+          id="tab-analytics-growth"
+          onClick={() => setActiveSubTab('growth')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all whitespace-nowrap ${
+            activeSubTab === 'growth'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/20 ring-1 ring-purple-400/40'
+              : 'bg-slate-900/80 hover:bg-slate-800 text-purple-300 border border-purple-500/30'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+          <span>Crecimiento & Retención (30D)</span>
+          <span className="text-[10px] bg-purple-950 px-1.5 py-0.5 rounded-full border border-purple-500/40 text-purple-200">
+            Nuevo
+          </span>
+        </button>
+
+        <button
+          id="tab-analytics-sales"
+          onClick={() => setActiveSubTab('sales')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all whitespace-nowrap ${
+            activeSubTab === 'sales'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          <span>Ventas & Horas Pico</span>
+        </button>
+
+        <button
+          id="tab-analytics-sedes"
+          onClick={() => setActiveSubTab('sedes')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all whitespace-nowrap ${
+            activeSubTab === 'sedes'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+          }`}
+        >
+          <Store className="w-4 h-4" />
+          <span>Rendimiento Sedes & Canales</span>
+        </button>
+
+        <button
+          id="tab-analytics-audit"
+          onClick={() => setActiveSubTab('audit')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all whitespace-nowrap ${
+            activeSubTab === 'audit'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+              : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800'
+          }`}
+        >
+          <FileSpreadsheet className="w-4 h-4" />
+          <span>Auditoría de Comandas</span>
+        </button>
+      </div>
+
       {/* TOP KPI CARDS */}
+      {(activeSubTab === 'dashboard' || activeSubTab === 'sales') && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Ventas Totales */}
         <div className="p-4 rounded-2xl bg-[#1E293B]/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-emerald-500/40 transition-all">
@@ -548,8 +621,23 @@ EFICIENCIA ESTIMADA: Reducción del 34% en tiempo de entrega y ahorro de $18.50 
           </div>
         </div>
       </div>
+      )}
+
+      {/* DYNAMIC BUSINESS GROWTH & RETENTION MODULE (30-Day Trends) */}
+      {(activeSubTab === 'dashboard' || activeSubTab === 'growth') && (
+        <BusinessGrowthWidgets
+          orders={orders}
+          brands={brands}
+          selectedBrand={selectedBrand}
+          selectedSede={selectedSede}
+          currentCurrency={currentCurrency}
+          filterSedeId={filterSedeId}
+        />
+      )}
 
       {/* D3.JS INTERACTIVE VISUAL ANALYTICS SECTION */}
+      {(activeSubTab === 'dashboard' || activeSubTab === 'sales' || activeSubTab === 'sedes') && (
+      <>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7">
           <D3WeeklySalesTrend
@@ -813,8 +901,11 @@ EFICIENCIA ESTIMADA: Reducción del 34% en tiempo de entrega y ahorro de $18.50 
         </div>
 
       </div>
+      </>
+      )}
 
       {/* SECTION 3: Payment Gateways & Cancellation Audit Table */}
+      {(activeSubTab === 'dashboard' || activeSubTab === 'sedes' || activeSubTab === 'audit') && (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Payment Methods Breakdown */}
@@ -965,6 +1056,7 @@ EFICIENCIA ESTIMADA: Reducción del 34% en tiempo de entrega y ahorro de $18.50 
         </div>
 
       </div>
+      )}
 
     </div>
   );

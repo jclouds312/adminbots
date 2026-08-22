@@ -1065,3 +1065,138 @@ export interface PowerBiDatasetConfig {
   lastSyncUtc: string;
 }
 
+// ----------------------------------------------------------------------
+// FIREBASE CLOUD MESSAGING (FCM) & PUSH NOTIFICATIONS INTERFACES
+// ----------------------------------------------------------------------
+
+export type PushNotificationCategory =
+  | 'new_order'
+  | 'payment_confirmed'
+  | 'kitchen_ready'
+  | 'stock_critical'
+  | 'delivery_dispatched'
+  | 'order_cancelled'
+  | 'system_alert';
+
+export interface PushNotificationPayload {
+  id: string;
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  tag?: string;
+  category: PushNotificationCategory;
+  orderId?: string;
+  orderReference?: string;
+  sedeId?: string;
+  sedeName?: string;
+  customerName?: string;
+  customerPhone?: string;
+  total?: number;
+  currency?: string;
+  timestamp: string;
+  clickActionUrl?: string;
+  sound?: string;
+  priority?: 'high' | 'critical' | 'normal';
+  read?: boolean;
+  data?: Record<string, any>;
+}
+
+export interface FcmDeviceRegistration {
+  tokenId: string;
+  token: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  deviceLabel: string;
+  browser: string;
+  os: string;
+  isPwaStandalone: boolean;
+  permissionStatus: NotificationPermission | 'unsupported';
+  enabledChannels: {
+    newOrder: boolean;
+    paymentConfirmed: boolean;
+    kitchenReady: boolean;
+    stockCritical: boolean;
+    deliveryDispatched: boolean;
+    orderCancelled: boolean;
+    systemAlert: boolean;
+  };
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+  registeredAt: string;
+  lastActive: string;
+}
+
+export interface PushNotificationStats {
+  totalDelivered: number;
+  totalClicked: number;
+  activeSubscribers: number;
+  lastDispatchedAt: string | null;
+}
+
+export interface GmailMessageHeader {
+  name: string;
+  value: string;
+}
+
+export interface GmailMessage {
+  id: string;
+  threadId: string;
+  labelIds: string[];
+  snippet: string;
+  subject: string;
+  from: string;
+  to: string;
+  date: string;
+  bodyHtml?: string;
+  bodyText?: string;
+  unread: boolean;
+  category?: 'order' | 'supplier' | 'customer' | 'closure' | 'general';
+  hasAttachments?: boolean;
+  restaurantBrandId?: string;
+  restaurantSedeId?: string;
+}
+
+export interface GmailThread {
+  id: string;
+  historyId?: string;
+  messages: GmailMessage[];
+}
+
+export interface GmailLabel {
+  id: string;
+  name: string;
+  type?: 'system' | 'user';
+  unreadCount?: number;
+  totalCount?: number;
+  color?: {
+    textColor: string;
+    backgroundColor: string;
+  };
+}
+
+export interface GmailSendPayload {
+  to: string;
+  cc?: string;
+  bcc?: string;
+  subject: string;
+  bodyHtml: string;
+  bodyText?: string;
+  threadId?: string;
+  labelIds?: string[];
+  templateType?: 'custom' | 'receipt' | 'closing' | 'supplier_po' | 'reservation' | 'feedback_response';
+  metadata?: Record<string, any>;
+}
+
+export interface GmailSendResult {
+  success: boolean;
+  messageId: string;
+  threadId?: string;
+  labelIds?: string[];
+  timestamp: string;
+  message: string;
+  directApi: boolean;
+}
+
+

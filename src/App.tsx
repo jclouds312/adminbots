@@ -22,6 +22,8 @@ import { DeployBotModal } from './components/DeployBotModal';
 import { InvoiceModal } from './components/InvoiceModal';
 import { GooglePickerModal } from './components/GooglePickerModal';
 import { AiSystemCopilotModal } from './components/AiSystemCopilotModal';
+import { PushNotificationManagerModal } from './components/PushNotificationManagerModal';
+import { NotificationBanner, AppNotificationToast } from './components/NotificationBanner';
 
 import { FRANCHISE_BRANDS } from './data/franchisesAndPlatforms';
 import { USER_PROFILES } from './data/userProfiles';
@@ -33,13 +35,21 @@ import {
   UserProfile, 
   AppThemeConfig, 
   Order, 
-  OrderStatus 
+  OrderStatus,
+  PushNotificationPayload 
 } from './types';
-import { CheckCircle2, Sparkles, X } from 'lucide-react';
+import { CheckCircle2, Sparkles, X, BellRing } from 'lucide-react';
 import { testFirebaseConnection } from './firebase';
 import { saveOrderToFirestore, saveBotToFirestore, saveBranchToFirestore } from './services/firebaseService';
 import { useOfflineSyncManager } from './hooks/useOfflineSyncManager';
 import { getCachedOrders, cacheOrdersLocally } from './services/offlineSyncService';
+import { 
+  setupForegroundMessageListener, 
+  sendAdminPushAlert, 
+  playNotificationChime, 
+  triggerHapticVibration, 
+  getNotificationHistory 
+} from './services/fcmService';
 
 export const App: React.FC = () => {
   // State for brands and sedes
@@ -90,8 +100,9 @@ export const App: React.FC = () => {
     testFirebaseConnection().catch(console.warn);
   }, []);
 
-  // Notification Toast state
-  const [notification, setNotification] = useState<{ message: string; title?: string } | null>(null);
+  // Rich Notification Toast state & Highlighted Order Focus
+  const [notification, setNotification] = useState<AppNotificationToast | null>(null);
+  const [highlightedOrderId, setHighlightedOrderId] = useState<string | null>(null);
 
   // Modals state
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
@@ -99,7 +110,69 @@ export const App: React.FC = () => {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isPickerModalOpen, setIsPickerModalOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [isPushModalOpen, setIsPushModalOpen] = useState(false);
+  const [unreadPushCount, setUnreadPushCount] = useState<number>(0);
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<Order | null>(null);
+
+  // Setup Firebase Cloud Messaging foreground message listener and Service Worker navigation handler
+  useEffect(() => {
+    // 1. Listen for FCM foreground messages
+    const unsubscribe = setupForegroundMessageListener((payload: PushNotificationPayload) => {
+      setNotification({
+        id: payload.id,
+        title: payload.title,
+        message: payload.body,
+        category: payload.category,
+        orderId: payload.orderId,
+        orderReference: payload.orderReference,
+        sedeId: payload.sedeId,
+        sedeName: payload.sedeName,
+        customerName: payload.customerName,
+        total: payload.total,
+        currency: payload.currency,
+        targetTab: (payload.clickActionUrl?.includes('kds') 
+          ? 'kds_cocina' 
+          : payload.clickActionUrl?.includes('kanban') 
+          ? 'kanban_pedidos' 
+          : payload.clickActionUrl?.includes('kardex') 
+          ? 'kardex_inventario' 
+          : undefined),
+        actionLabel: payload.category === 'stock_critical' ? 'Ver Kardex' : 'Ver Pedido'
+      });
+      setUnreadPushCount(prev => prev + 1);
+      playNotificationChime(payload.category);
+      triggerHapticVibration(payload.category);
+    });
+
+    // 2. Listen for Service Worker navigation events (when admin clicks a push alert while PWA is backgrounded)
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'NOTIFICATION_NAVIGATE') {
+        const targetUrl = event.data.url as string;
+        const orderId = event.data.orderId as string | undefined;
+        if (orderId) {
+          setHighlightedOrderId(orderId);
+        }
+        if (targetUrl) {
+          if (targetUrl.includes('kds_cocina')) setActiveTab('kds_cocina');
+          else if (targetUrl.includes('kanban_pedidos')) setActiveTab('kanban_pedidos');
+          else if (targetUrl.includes('kardex_inventario')) setActiveTab('kardex_inventario');
+          else if (targetUrl.includes('multi_sedes')) setActiveTab('multi_sedes');
+          else if (targetUrl.includes('chat_bot')) setActiveTab('chat_bot');
+        }
+      }
+    };
+
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+    }
+
+    return () => {
+      unsubscribe();
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+      }
+    };
+  }, []);
 
   // Initial Orders with local cache recovery fallback
   const [orders, setOrders] = useState<Order[]>(() => {
@@ -204,6 +277,31 @@ export const App: React.FC = () => {
     onNotification: handleOfflineNotification
   });
 
+  // Quick navigation handler from Notification Banner with preloaded order context
+  const handleNavigateToOrder = (orderId: string, targetTab: NavigationTabId = 'kds_cocina', sedeId?: string) => {
+    setHighlightedOrderId(orderId);
+    setActiveTab(targetTab);
+
+    // Auto-switch selected branch if order belongs to another sede
+    if (sedeId) {
+      for (const brand of brands) {
+        const matchingSede = brand.branches?.find(b => b.sede_id === sedeId);
+        if (matchingSede) {
+          setSelectedBrand(brand);
+          setSelectedSede(matchingSede);
+          break;
+        }
+      }
+    }
+  };
+
+  // Quick Accept order action from Notification Banner
+  const handleQuickAcceptOrder = (orderId: string) => {
+    handleUpdateOrderStatus(orderId, 'en_cocina', 'Comanda aceptada rápidamente desde banner de notificación');
+    playNotificationChime('payment_confirmed');
+    triggerHapticVibration('payment_confirmed');
+  };
+
   // Handle new order created from chatbot
   const handleOrderCreated = (newOrder: Order) => {
     setOrders((prev) => {
@@ -219,16 +317,69 @@ export const App: React.FC = () => {
       });
     }
 
+    // Dispatch FCM Push notification to all active admin devices
+    sendAdminPushAlert({
+      title: `🔥 ¡Nuevo Pedido #${newOrder.pedido_id}! ($${newOrder.total.toFixed(2)} ${newOrder.moneda})`,
+      body: `${newOrder.nombre_cliente} realizó un pedido con ${newOrder.items.length} items en ${newOrder.nombre_sede}.`,
+      category: 'new_order',
+      orderId: newOrder.pedido_id,
+      orderReference: newOrder.reference,
+      sedeId: newOrder.sede_id,
+      sedeName: newOrder.nombre_sede,
+      priority: 'high',
+      clickActionUrl: '/#kds_cocina'
+    }).catch(console.warn);
+
+    // Show rich interactive notification toast with quick action buttons
     setNotification({
-      title: '¡Nueva Orden Recibida!',
-      message: `Pedido #${newOrder.pedido_id} de ${newOrder.nombre_cliente} enviado a cocina.`
+      id: `toast_new_${newOrder.pedido_id}`,
+      title: '¡Nueva Orden en Tiempo Real!',
+      message: `Pedido #${newOrder.pedido_id} de ${newOrder.nombre_cliente} recibido en ${newOrder.nombre_sede}.`,
+      category: 'new_order',
+      orderId: newOrder.pedido_id,
+      order: newOrder,
+      sedeId: newOrder.sede_id,
+      sedeName: newOrder.nombre_sede,
+      customerName: newOrder.nombre_cliente,
+      total: newOrder.total,
+      currency: newOrder.moneda,
+      targetTab: 'kds_cocina',
+      actionLabel: 'Ver en KDS'
     });
-    setTimeout(() => setNotification(null), 4000);
   };
 
   // Update order status with resilient offline queue
   const handleUpdateOrderStatus = (orderId: string, newStatus: OrderStatus, note?: string) => {
     updateOrderStatusOffline(orderId, newStatus, note);
+
+    const targetOrder = orders.find(o => o.pedido_id === orderId || o.id === orderId);
+
+    if (newStatus === 'listo_cocina') {
+      sendAdminPushAlert({
+        title: `👨‍🍳 ¡Comanda #${orderId} Lista en Cocina!`,
+        body: `El equipo de cocina ha finalizado la preparación de la orden #${orderId}.`,
+        category: 'kitchen_ready',
+        orderId,
+        priority: 'high',
+        clickActionUrl: '/#kanban_pedidos'
+      }).catch(console.warn);
+
+      setNotification({
+        id: `toast_ready_${orderId}`,
+        title: '¡Comanda Lista para Entrega!',
+        message: `El pedido #${orderId} de ${targetOrder?.nombre_cliente || 'Cliente'} está preparado y listo.`,
+        category: 'kitchen_ready',
+        orderId,
+        order: targetOrder,
+        sedeId: targetOrder?.sede_id,
+        sedeName: targetOrder?.nombre_sede,
+        customerName: targetOrder?.nombre_cliente,
+        total: targetOrder?.total,
+        currency: targetOrder?.moneda,
+        targetTab: 'kanban_pedidos',
+        actionLabel: 'Ver en Kanban'
+      });
+    }
   };
 
   const handleOpenInvoiceModal = (order: Order) => {
@@ -360,9 +511,9 @@ export const App: React.FC = () => {
     // Show feedback toast
     setNotification({
       title: '¡Bot Aprovisionado con Éxito!',
-      message: `Nueva sede '${newBranch.nombre_sede}' vinculada a Meta Cloud API y KDS en vivo.`
+      message: `Nueva sede '${newBranch.nombre_sede}' vinculada a Meta Cloud API y KDS en vivo.`,
+      category: 'system'
     });
-    setTimeout(() => setNotification(null), 5000);
 
     // Switch to bot simulator or multi sedes view
     setActiveTab('chat_bot');
@@ -392,32 +543,27 @@ export const App: React.FC = () => {
         onOpenThemeModal={() => setIsThemeModalOpen(true)}
         onOpenDeployModal={() => setIsDeployModalOpen(true)}
         onOpenPicker={() => setIsPickerModalOpen(true)}
+        onOpenPushModal={() => {
+          setIsPushModalOpen(true);
+          setUnreadPushCount(0);
+        }}
+        unreadPushCount={unreadPushCount}
         isOnline={isOnline}
         pendingSyncCount={pendingCount}
         isSyncing={isSyncing}
         onForceSync={() => syncQueue()}
       />
 
-      {/* Floating System Notification Banner */}
-      {notification && (
-        <div className="fixed top-20 right-4 z-50 max-w-sm p-4 rounded-2xl bg-slate-900/95 border border-emerald-500/50 shadow-2xl shadow-emerald-500/10 backdrop-blur-md animate-in slide-in-from-top-3 flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
-            <Sparkles className="w-5 h-5 animate-pulse" />
-          </div>
-          <div className="flex-1 min-w-0">
-            {notification.title && (
-              <h5 className="text-xs font-bold text-slate-100">{notification.title}</h5>
-            )}
-            <p className="text-xs text-slate-300 mt-0.5">{notification.message}</p>
-          </div>
-          <button
-            onClick={() => setNotification(null)}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      {/* Rich Floating System Notification Banner with Quick Actions */}
+      <NotificationBanner
+        notification={notification}
+        orders={orders}
+        onClose={() => setNotification(null)}
+        onNavigateToOrder={handleNavigateToOrder}
+        onAcceptOrder={handleQuickAcceptOrder}
+        onOpenInvoice={handleOpenInvoiceModal}
+        onNavigateToTab={(tab) => setActiveTab(tab)}
+      />
 
       {/* Main Views Container */}
       <main className="flex-1 pb-24 md:pb-24 overflow-y-auto">
@@ -446,8 +592,7 @@ export const App: React.FC = () => {
             }}
             onNavigateToTab={(tab) => setActiveTab(tab)}
             onShowNotification={(title, message) => {
-              setNotification({ title, message });
-              setTimeout(() => setNotification(null), 4000);
+              setNotification({ title, message, category: 'info' });
             }}
           />
         )}
@@ -456,8 +601,7 @@ export const App: React.FC = () => {
           <DocumentationGuideView
             onNavigateToTab={(tab) => setActiveTab(tab)}
             onShowNotification={(title, message) => {
-              setNotification({ title, message });
-              setTimeout(() => setNotification(null), 4000);
+              setNotification({ title, message, category: 'info' });
             }}
           />
         )}
@@ -471,6 +615,8 @@ export const App: React.FC = () => {
             pendingSyncCount={pendingCount}
             isSyncing={isSyncing}
             onForceSync={() => syncQueue()}
+            highlightedOrderId={highlightedOrderId}
+            onClearHighlight={() => setHighlightedOrderId(null)}
           />
         )}
 
@@ -483,6 +629,8 @@ export const App: React.FC = () => {
             pendingSyncCount={pendingCount}
             isSyncing={isSyncing}
             onForceSync={() => syncQueue()}
+            highlightedOrderId={highlightedOrderId}
+            onClearHighlight={() => setHighlightedOrderId(null)}
           />
         )}
 
@@ -509,9 +657,14 @@ export const App: React.FC = () => {
         {activeTab === 'workspace_hub' && (
           <WorkspaceHubView 
             onOpenPicker={() => setIsPickerModalOpen(true)}
+            onNavigateToTab={(tab) => setActiveTab(tab)}
             brands={brands}
             selectedBrand={selectedBrand}
             selectedSede={selectedSede}
+            orders={orders}
+            onShowNotification={(title, message) => {
+              setNotification({ title, message, category: 'info' });
+            }}
           />
         )}
 
@@ -532,7 +685,9 @@ export const App: React.FC = () => {
 
         {activeTab === 'webhook_logs' && <WebhookLogsView />}
 
-        {activeTab === 'config_vault' && <ConfigVaultView />}
+        {activeTab === 'config_vault' && (
+          <ConfigVaultView onOpenPushModal={() => setIsPushModalOpen(true)} />
+        )}
       </main>
 
       {/* Mobile Ergonomic Quick Access Bar */}
@@ -555,6 +710,11 @@ export const App: React.FC = () => {
         onOpenDeployModal={() => setIsDeployModalOpen(true)}
         onOpenPicker={() => setIsPickerModalOpen(true)}
         onOpenAIGuide={() => setIsCopilotOpen(true)}
+        onOpenPushModal={() => {
+          setIsPushModalOpen(true);
+          setUnreadPushCount(0);
+        }}
+        unreadPushCount={unreadPushCount}
       />
 
       {/* Floating AI System Assistant Button */}
@@ -610,6 +770,19 @@ export const App: React.FC = () => {
         selectedBrand={selectedBrand}
         selectedSede={selectedSede}
         currentUser={currentUser}
+      />
+
+      {/* Firebase Cloud Messaging (FCM) Push Notification Management & Simulation Modal */}
+      <PushNotificationManagerModal
+        isOpen={isPushModalOpen}
+        onClose={() => setIsPushModalOpen(false)}
+        currentUser={currentUser}
+        selectedBrand={selectedBrand}
+        selectedSede={selectedSede}
+        onNavigateToTab={(tab) => {
+          setActiveTab(tab);
+          setIsPushModalOpen(false);
+        }}
       />
     </div>
   );

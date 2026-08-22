@@ -25,7 +25,8 @@ import {
   Sun,
   Moon,
   BookOpen,
-  LayoutGrid
+  LayoutGrid,
+  BellRing
 } from 'lucide-react';
 import { 
   NavigationTabId, 
@@ -57,6 +58,8 @@ interface MobileQuickNavProps {
   onOpenDeployModal: () => void;
   onOpenPicker: () => void;
   onOpenAIGuide?: () => void;
+  onOpenPushModal?: () => void;
+  unreadPushCount?: number;
 }
 
 export const MobileQuickNav: React.FC<MobileQuickNavProps> = ({
@@ -77,7 +80,9 @@ export const MobileQuickNav: React.FC<MobileQuickNavProps> = ({
   onOpenThemeModal,
   onOpenDeployModal,
   onOpenPicker,
-  onOpenAIGuide
+  onOpenAIGuide,
+  onOpenPushModal,
+  unreadPushCount = 0
 }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerCategoryFilter, setDrawerCategoryFilter] = useState<'all' | 'ops' | 'strategy' | 'integrations'>('all');
@@ -247,6 +252,22 @@ export const MobileQuickNav: React.FC<MobileQuickNavProps> = ({
             >
               <Palette className="w-3.5 h-3.5" />
             </button>
+
+            {/* Quick FCM Push Notification Bell */}
+            {onOpenPushModal && (
+              <button
+                onClick={onOpenPushModal}
+                className="relative p-2 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border border-amber-500/50 transition-colors"
+                title="Notificaciones Push FCM"
+              >
+                <BellRing className="w-3.5 h-3.5 text-amber-400" />
+                {unreadPushCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white">
+                    {unreadPushCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
 
           {/* "+ Desplegar Bot" FAB on Dock */}

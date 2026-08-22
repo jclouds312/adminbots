@@ -88,6 +88,41 @@ const memoryStore = {
     }
   ] as any[],
   webhookLogs: [] as any[],
+  fcmTokens: new Map<string, any>(),
+  pushNotificationLogs: [
+    {
+      id: "notif_seed_01",
+      title: "🔥 ¡Nuevo Pedido #1002! ($60.50 USD)",
+      body: "Valeria Restrepo ordenó Combo Desayuno y Pandebonos en Sede Orlando.",
+      category: "new_order",
+      orderId: "1002",
+      orderReference: "PED-1002-1723725000000",
+      sedeId: "sede-orlando-02",
+      sedeName: "Sede Orlando (La Ceja Bakery)",
+      customerName: "Valeria Restrepo",
+      total: 60.50,
+      currency: "USD",
+      timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+      priority: "high",
+      deliveredCount: 3
+    },
+    {
+      id: "notif_seed_02",
+      title: "💳 Pago Confirmado #1001 - Wompi",
+      body: "Transacción aprobada por $48.00 USD. Comanda enviada a pantalla KDS de cocina.",
+      category: "payment_confirmed",
+      orderId: "1001",
+      orderReference: "PED-1001-1723720000000",
+      sedeId: "sede-miami-01",
+      sedeName: "Sede Principal (Brickell / Miami)",
+      customerName: "Alejandro Morales",
+      total: 48.00,
+      currency: "USD",
+      timestamp: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+      priority: "high",
+      deliveredCount: 3
+    }
+  ] as any[],
   driveFolders: [
     {
       id: "folder_root_001",
@@ -402,6 +437,73 @@ const memoryStore = {
       autoSync: true
     }
   ],
+  gmailMessages: [
+    {
+      id: "msg_001",
+      threadId: "th_001",
+      labelIds: ["INBOX", "PEDIDOS", "UNREAD"],
+      snippet: "Confirmación de pago Wompi #wompi_PED-1001-USA por valor de $40.00 USD para entrega en Brickell Ave.",
+      subject: "Confirmación de Pago Exitoso - Orden #PED-1001-USA ($40.00 USD)",
+      from: "Wompi Pagos Seguros <notificaciones@wompi.co>",
+      to: "johnatanvallejomarulanda@gmail.com",
+      date: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
+      unread: true,
+      category: "order",
+      hasAttachments: false,
+      bodyHtml: `<div style="font-family: sans-serif; padding: 16px; color: #1e293b;"><h3 style="color: #059669;">Transacción Aprobada Wompi</h3><p>Tu cliente <strong>Alejandro Morales</strong> ha completado el pago de <strong>$40.00 USD</strong> mediante tarjeta de crédito.</p><ul><li><strong>Referencia:</strong> wompi_PED-1001-USA</li><li><strong>Sede:</strong> Brickell Miami Downtown</li><li><strong>Items:</strong> 2x The Double Smash Burger, 1x Truffle Fries</li></ul><p>El pedido ha sido despachado a la cola KDS de cocina automáticamente.</p></div>`
+    },
+    {
+      id: "msg_002",
+      threadId: "th_002",
+      labelIds: ["INBOX", "PROVEEDORES"],
+      snippet: "Factura y confirmación de despacho de Carne Angus Smash 80/20 (50kg) para la sede Brickell.",
+      subject: "Factura de Despacho Insumos #FC-8921 - Frigorífico Premium USA",
+      from: "Distribuidora Carnes Angus <ventas@angusdistributors.com>",
+      to: "johnatanvallejomarulanda@gmail.com",
+      date: new Date(Date.now() - 1000 * 60 * 140).toISOString(),
+      unread: true,
+      category: "supplier",
+      hasAttachments: true,
+      bodyHtml: `<div style="font-family: sans-serif; padding: 16px; color: #1e293b;"><h3 style="color: #b45309;">Confirmación de Despacho de Insumos</h3><p>Estimado equipo de Nómada Burgers, adjuntamos la factura electrónica #FC-8921 por 50kg de Carne Angus 80/20.</p><p>Entrega estimada: <strong>Hoy a las 11:30 AM</strong> en la sede Brickell Miami.</p></div>`
+    },
+    {
+      id: "msg_003",
+      threadId: "th_003",
+      labelIds: ["INBOX", "VIP"],
+      snippet: "Consulta de reserva para evento corporativo privado de 18 personas el próximo viernes.",
+      subject: "Consulta de Reserva para Evento Corporativo (18 Personas) - Sede Orlando Millenia",
+      from: "Valeria Restrepo <valeria.restrepo@techventures.com>",
+      to: "johnatanvallejomarulanda@gmail.com",
+      date: new Date(Date.now() - 1000 * 60 * 300).toISOString(),
+      unread: false,
+      category: "customer",
+      hasAttachments: false,
+      bodyHtml: `<div style="font-family: sans-serif; padding: 16px; color: #1e293b;"><h3>Solicitud de Reserva y Menú Degustación</h3><p>Hola equipo, quisiéramos celebrar el cierre de trimestre de nuestra compañía en la terraza de su sede Orlando Millenia con un menú especial de hamburguesas gourmet y cócteles.</p><p>¿Tienen disponibilidad para el próximo viernes a las 7:30 PM para 18 personas?</p></div>`
+    },
+    {
+      id: "msg_004",
+      threadId: "th_004",
+      labelIds: ["INBOX", "CIERRES"],
+      snippet: "Reporte consolidado del cierre de caja y comisiones ahorradas de ayer en todas las franquicias.",
+      subject: "Reporte Financiero Automatizado - Cierre Semanal Franquicias Nómada",
+      from: "Nómada System Bot <no-reply@nomadaexperiences.com>",
+      to: "johnatanvallejomarulanda@gmail.com",
+      date: new Date(Date.now() - 1000 * 60 * 1400).toISOString(),
+      unread: false,
+      category: "closure",
+      hasAttachments: true,
+      bodyHtml: `<div style="font-family: sans-serif; padding: 16px; color: #1e293b;"><h3>Resumen Financiero Consolidado</h3><p>Se registraron 184 pedidos exitosos a través de WhatsApp y POS con un volumen bruto de <strong>$4,280 USD</strong> y un ahorro directo de comisiones de <strong>$1,284 USD</strong>.</p></div>`
+    }
+  ] as any[],
+  gmailLabels: [
+    { id: "INBOX", name: "Bandeja de Entrada", type: "system", unreadCount: 2, totalCount: 24 },
+    { id: "SENT", name: "Enviados", type: "system", totalCount: 18 },
+    { id: "PEDIDOS", name: "Pedidos & Recibos", type: "user", unreadCount: 1, totalCount: 14 },
+    { id: "PROVEEDORES", name: "Proveedores & Insumos", type: "user", unreadCount: 1, totalCount: 8 },
+    { id: "CIERRES", name: "Cierres Contables", type: "user", unreadCount: 0, totalCount: 12 },
+    { id: "VIP", name: "Clientes VIP", type: "user", unreadCount: 0, totalCount: 9 }
+  ] as any[],
+
   brands: [
     {
       id: "brand_01",
@@ -938,6 +1040,25 @@ app.post("/api/pedidos/confirmar", (req: Request, res: Response) => {
     eventType: "order.created"
   });
 
+  // Push FCM notification to administrators
+  const orderPushAlert = {
+    id: `notif_fcm_${Date.now()}`,
+    title: `🔥 ¡Nuevo Pedido #${newOrderId}! ($${total.toFixed(2)} USD)`,
+    body: `${nombre_cliente || 'Cliente'} acaba de realizar un pedido en ${newOrder.nombre_sede}. ${orderItems.length} producto(s).`,
+    category: "new_order",
+    orderId: newOrderId,
+    orderReference: reference,
+    sedeId: newOrder.sede_id,
+    sedeName: newOrder.nombre_sede,
+    customerName: newOrder.nombre_cliente,
+    total,
+    currency: "USD",
+    timestamp: new Date().toISOString(),
+    priority: "high",
+    deliveredCount: memoryStore.fcmTokens.size || 1
+  };
+  memoryStore.pushNotificationLogs.unshift(orderPushAlert);
+
   res.status(201).json({
     success: true,
     pedido: newOrder,
@@ -982,6 +1103,25 @@ app.post("/api/webhooks/wompi-simulate", (req: Request, res: Response) => {
     orderReference: order.reference,
     eventType: `transaction.updated.${status || 'APPROVED'}`
   });
+
+  if (isApproved) {
+    memoryStore.pushNotificationLogs.unshift({
+      id: `notif_fcm_${Date.now()}`,
+      title: `💳 Pago Confirmado #${order.pedido_id} ($${order.total?.toFixed(2) || '0.00'} ${order.moneda || 'USD'})`,
+      body: `Transacción aprobada vía Wompi/Stripe. Comanda #${order.pedido_id} enviada automáticamente a Cocina KDS.`,
+      category: "payment_confirmed",
+      orderId: order.pedido_id,
+      orderReference: order.reference,
+      sedeId: order.sede_id,
+      sedeName: order.nombre_sede,
+      customerName: order.nombre_cliente,
+      total: order.total,
+      currency: order.moneda,
+      timestamp: new Date().toISOString(),
+      priority: "high",
+      deliveredCount: memoryStore.fcmTokens.size || 1
+    });
+  }
 
   res.json({
     success: true,
@@ -1227,11 +1367,125 @@ app.get("/api/sheets/records", (_req: Request, res: Response) => {
   res.json(memoryStore.googleSheets);
 });
 
+app.post("/api/sheets/create", (req: Request, res: Response) => {
+  const { title = "Nómada LATAM - Central Master Command", sheetTabs = ["Pedidos_Live", "Kardex_Inventario", "Cierre_Ventas_USD", "Clientes_WhatsApp", "Menu_Digital"] } = req.body;
+  const newSheetId = `1Sheet_Master_${Date.now()}`;
+  const newSheet = {
+    id: `sheet_${Date.now()}`,
+    spreadsheetId: newSheetId,
+    title: `${title} (${new Date().toLocaleDateString()})`,
+    sheetUrl: `https://docs.google.com/spreadsheets/d/${newSheetId}/edit`,
+    sheetsList: sheetTabs,
+    lastSyncedAt: new Date().toISOString(),
+    rowsCount: memoryStore.orders.length + 28,
+    syncStatus: "synced",
+    autoSync: true
+  };
+  memoryStore.googleSheets.unshift(newSheet);
+  res.json({
+    success: true,
+    spreadsheetId: newSheetId,
+    spreadsheetUrl: newSheet.sheetUrl,
+    sheet: newSheet,
+    message: `Hoja de cálculo "${newSheet.title}" creada y conectada exitosamente.`
+  });
+});
+
+app.get("/api/sheets/read", (req: Request, res: Response) => {
+  const range = (req.query.range as string) || "Pedidos_Live!A1:P20";
+  const tabName = range.split("!")[0] || "Pedidos_Live";
+
+  let sampleValues: any[][] = [];
+  if (tabName === "Pedidos_Live") {
+    sampleValues = [
+      ["ID Pedido", "Referencia", "Sede", "Fecha", "Cliente", "Teléfono", "Dirección", "Items", "Subtotal", "Costo Domicilio", "Total", "Moneda", "Método", "Estado"],
+      ...memoryStore.orders.map(o => [
+        o.pedido_id,
+        o.reference,
+        o.nombre_sede || "Brickell Miami",
+        o.created_at,
+        o.nombre_cliente,
+        o.telefono,
+        o.direccion_entrega,
+        (o.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(", "),
+        o.subtotal,
+        o.costo_domicilio,
+        o.total,
+        o.moneda,
+        o.wompi_reference ? "Wompi" : "Stripe",
+        o.estado
+      ])
+    ];
+  } else if (tabName === "Kardex_Inventario") {
+    sampleValues = [
+      ["ID Insumo", "Sede", "Insumo", "Categoría", "Unidad", "Stock Actual", "Stock Mínimo", "Costo Unitario ($)", "Valor Total ($)", "Estado"],
+      ...memoryStore.kardexItems.map(k => [
+        k.id,
+        k.sede_id,
+        k.nombre_insumo,
+        k.categoria,
+        k.unidad_medida,
+        k.stock_actual,
+        k.stock_minimo,
+        k.costo_unitario,
+        k.valor_total_stock,
+        k.estado_stock
+      ])
+    ];
+  } else if (tabName === "Cierre_Ventas_USD") {
+    sampleValues = [
+      ["Fecha Cierre", "Sede", "Total Pedidos", "Ventas Brutas ($)", "Costo Domicilio ($)", "Ticket Promedio ($)", "Ahorro 30% Comisiones ($)", "Wompi Confirmado ($)", "Stripe USD ($)", "Efectivo ($)"],
+      [new Date().toLocaleDateString(), "Brickell Miami", memoryStore.orders.length, "248.50", "18.00", "41.40", "74.55", "145.00", "75.00", "28.50"]
+    ];
+  } else {
+    sampleValues = [
+      ["Campo 1", "Campo 2", "Campo 3"],
+      ["Valor 1", "Valor 2", "Valor 3"]
+    ];
+  }
+
+  res.json({ values: sampleValues, range });
+});
+
+app.post("/api/sheets/write", (req: Request, res: Response) => {
+  const { spreadsheetId, range, values } = req.body;
+  const sheet = memoryStore.googleSheets.find(s => s.spreadsheetId === spreadsheetId) || memoryStore.googleSheets[0];
+  if (sheet) {
+    sheet.lastSyncedAt = new Date().toISOString();
+    sheet.syncStatus = "synced";
+    sheet.rowsCount = (sheet.rowsCount || 0) + (values ? values.length : 1);
+  }
+  res.json({
+    success: true,
+    spreadsheetId: sheet?.spreadsheetId || spreadsheetId,
+    range,
+    rowsUpdated: values?.length || 0,
+    message: `${values?.length || 0} filas actualizadas en Google Sheets.`
+  });
+});
+
+app.post("/api/sheets/append", (req: Request, res: Response) => {
+  const { spreadsheetId, range, values } = req.body;
+  const sheet = memoryStore.googleSheets.find(s => s.spreadsheetId === spreadsheetId) || memoryStore.googleSheets[0];
+  if (sheet) {
+    sheet.lastSyncedAt = new Date().toISOString();
+    sheet.syncStatus = "synced";
+    sheet.rowsCount = (sheet.rowsCount || 0) + (values ? values.length : 1);
+  }
+  res.json({
+    success: true,
+    spreadsheetId: sheet?.spreadsheetId || spreadsheetId,
+    range,
+    rowsAppended: values?.length || 0,
+    message: `${values?.length || 0} filas añadidas a la hoja de Google Sheets.`
+  });
+});
+
 app.post("/api/sheets/save-record", (req: Request, res: Response) => {
   const record = req.body;
   const existingIdx = memoryStore.googleSheets.findIndex(s => s.spreadsheetId === record.spreadsheetId);
   if (existingIdx >= 0) {
-    memoryStore.googleSheets[existingIdx] = record;
+    memoryStore.googleSheets[existingIdx] = { ...memoryStore.googleSheets[existingIdx], ...record };
   } else {
     memoryStore.googleSheets.unshift(record);
   }
@@ -1252,6 +1506,141 @@ app.post("/api/sheets/sync-orders", (_req: Request, res: Response) => {
     spreadsheetId: memoryStore.googleSheets[0]?.spreadsheetId,
     timestamp: new Date().toISOString(),
     message: `${syncedOrdersCount} pedidos sincronizados en tiempo real con Google Sheets`
+  });
+});
+
+app.post("/api/sheets/sync-all", (_req: Request, res: Response) => {
+  const totalOrders = memoryStore.orders.length;
+  const totalKardex = memoryStore.kardexItems.length;
+  const totalRows = totalOrders + totalKardex + 54;
+  if (memoryStore.googleSheets.length > 0) {
+    memoryStore.googleSheets[0].lastSyncedAt = new Date().toISOString();
+    memoryStore.googleSheets[0].rowsCount = totalRows;
+    memoryStore.googleSheets[0].syncStatus = "synced";
+  }
+
+  res.json({
+    success: true,
+    totalRows,
+    tabsSynced: ["Pedidos_Live", "Kardex_Inventario", "Cierre_Ventas_USD", "Clientes_WhatsApp", "Menu_Digital"],
+    spreadsheetId: memoryStore.googleSheets[0]?.spreadsheetId,
+    timestamp: new Date().toISOString(),
+    message: `Sincronización integral completada: ${totalRows} registros sincronizados en 5 pestañas de Google Sheets.`
+  });
+});
+
+// ----------------------------------------------------------------------
+// 8.5 GMAIL WORKSPACE INTEGRATION ENDPOINTS
+// ----------------------------------------------------------------------
+app.get("/api/gmail/messages", (req: Request, res: Response) => {
+  const query = (req.query.query as string || "").toLowerCase();
+  const labelId = req.query.labelId as string;
+  const maxResults = parseInt(req.query.maxResults as string) || 20;
+
+  let messages = [...memoryStore.gmailMessages];
+
+  if (labelId && labelId !== "ALL") {
+    messages = messages.filter(m => m.labelIds.includes(labelId));
+  }
+
+  if (query) {
+    messages = messages.filter(m => 
+      m.subject.toLowerCase().includes(query) ||
+      m.snippet.toLowerCase().includes(query) ||
+      m.from.toLowerCase().includes(query)
+    );
+  }
+
+  res.json({
+    messages: messages.slice(0, maxResults),
+    resultSizeEstimate: messages.length
+  });
+});
+
+app.get("/api/gmail/messages/:id", (req: Request, res: Response) => {
+  const msg = memoryStore.gmailMessages.find(m => m.id === req.params.id);
+  if (!msg) {
+    return res.status(404).json({ error: "Mensaje de correo no encontrado." });
+  }
+  // Mark as read
+  msg.unread = false;
+  msg.labelIds = msg.labelIds.filter((l: string) => l !== "UNREAD");
+  res.json(msg);
+});
+
+app.post("/api/gmail/send", (req: Request, res: Response) => {
+  const { to, cc, bcc, subject, bodyHtml, bodyText, threadId, labelIds, templateType, metadata } = req.body;
+
+  if (!to || !subject) {
+    return res.status(400).json({ error: "Destinatario 'to' y 'subject' son requeridos." });
+  }
+
+  const newMessageId = `msg_${Date.now()}`;
+  const newMsg = {
+    id: newMessageId,
+    threadId: threadId || `th_${Date.now()}`,
+    labelIds: labelIds || ["SENT"],
+    snippet: (bodyText || subject).slice(0, 100) + "...",
+    subject,
+    from: "RestoBot Mailer <johnatanvallejomarulanda@gmail.com>",
+    to,
+    date: new Date().toISOString(),
+    bodyHtml: bodyHtml || `<p>${bodyText || ''}</p>`,
+    bodyText: bodyText || "",
+    unread: false,
+    category: templateType === "receipt" ? "order" : templateType === "closing" ? "closure" : templateType === "supplier_po" ? "supplier" : "general",
+    hasAttachments: false,
+    restaurantBrandId: metadata?.brandId,
+    restaurantSedeId: metadata?.sedeId
+  };
+
+  memoryStore.gmailMessages.unshift(newMsg);
+
+  // If order receipt, also log into order details
+  if (metadata?.orderId) {
+    const order = memoryStore.orders.find(o => o.pedido_id === metadata.orderId || o.reference === metadata.orderId);
+    if (order) {
+      (order as any).receiptSentViaEmail = true;
+      (order as any).receiptSentEmail = to;
+    }
+  }
+
+  res.json({
+    success: true,
+    messageId: newMessageId,
+    threadId: newMsg.threadId,
+    timestamp: newMsg.date,
+    message: `Correo enviado exitosamente a ${to} vía Gmail API.`
+  });
+});
+
+app.get("/api/gmail/labels", (_req: Request, res: Response) => {
+  res.json({
+    labels: memoryStore.gmailLabels
+  });
+});
+
+app.post("/api/gmail/ai-draft", async (req: Request, res: Response) => {
+  const { prompt, contextType, customerName, orderRef, language = "es" } = req.body;
+
+  let draftedSubject = "";
+  let draftedHtml = "";
+
+  if (contextType === "order_delay") {
+    draftedSubject = `Actualización de tu pedido #${orderRef || 'RestoBot'}`;
+    draftedHtml = `<p>Hola <strong>${customerName || 'estimado cliente'}</strong>,</p><p>Queremos informarte que tu pedido está en preparación especial en nuestra cocina. Debido a la alta demanda artesanal, tendremos un ligero retraso de 7 minutos. Te agradecemos tu paciencia y te enviamos un cupón de cortesía para tu próxima orden.</p>`;
+  } else if (contextType === "vip_invite") {
+    draftedSubject = `Invitación Exclusiva: Nueva Carta de Temporada en Nómada`;
+    draftedHtml = `<p>Hola <strong>${customerName || 'amigo foodie'}</strong>,</p><p>Como miembro destacado de nuestra comunidad, tienes una mesa reservada y una degustación de cortesía en nuestro próximo lanzamiento gastronómico.</p>`;
+  } else {
+    draftedSubject = `Respuesta de Atención al Cliente - RestoBot`;
+    draftedHtml = `<p>Hola <strong>${customerName || 'estimado cliente'}</strong>,</p><p>${prompt || 'Gracias por contactarnos. Hemos recibido tu mensaje y nuestro equipo de atención se encuentra gestionando tu solicitud de inmediato.'}</p>`;
+  }
+
+  res.json({
+    subject: draftedSubject,
+    bodyHtml: draftedHtml,
+    language
   });
 });
 
@@ -2089,6 +2478,234 @@ app.post("/api/vault/test-connection", (req: Request, res: Response) => {
     latencyMs: Math.floor(70 + Math.random() * 90),
     status: "healthy",
     message: `Conexión con ${provider} verificada exitosamente con TLS 1.3 y OAuth 2.0.`
+  });
+});
+
+// ----------------------------------------------------------------------
+// 15. FIREBASE CLOUD MESSAGING (FCM) & PUSH NOTIFICATION API ROUTES
+// ----------------------------------------------------------------------
+
+// Register or update administrator device FCM token
+app.post("/api/notifications/fcm-token", (req: Request, res: Response) => {
+  const { token, tokenId, userId, userEmail, userName, deviceLabel, browser, os, isPwaStandalone, enabledChannels } = req.body;
+  
+  if (!token) {
+    return res.status(400).json({ error: "FCM token es requerido para el registro" });
+  }
+
+  const deviceData = {
+    tokenId: tokenId || `fcm_dev_${Date.now()}`,
+    token,
+    userId: userId || "usr_admin",
+    userEmail: userEmail || "admin@restobot.ai",
+    userName: userName || "Administrador",
+    deviceLabel: deviceLabel || "Dispositivo Administrador",
+    browser: browser || "Chrome",
+    os: os || "PWA / Web",
+    isPwaStandalone: !!isPwaStandalone,
+    enabledChannels: enabledChannels || {
+      newOrder: true,
+      paymentConfirmed: true,
+      kitchenReady: true,
+      stockCritical: true,
+      deliveryDispatched: true,
+      orderCancelled: true,
+      systemAlert: true
+    },
+    registeredAt: new Date().toISOString(),
+    lastActive: new Date().toISOString()
+  };
+
+  memoryStore.fcmTokens.set(token, deviceData);
+
+  // Log to webhooks
+  memoryStore.webhookLogs.unshift({
+    id: `log-fcm-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    source: "fcm_messaging",
+    endpoint: "/api/notifications/fcm-token",
+    status: "success",
+    method: "POST",
+    statusCode: 200,
+    latencyMs: 45,
+    eventType: "fcm.device_registered"
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Dispositivo registrado exitosamente en Firebase Cloud Messaging",
+    device: deviceData,
+    totalActiveDevices: memoryStore.fcmTokens.size
+  });
+});
+
+// List all registered administrator devices
+app.get("/api/notifications/fcm-tokens", (_req: Request, res: Response) => {
+  const registeredDevices = Array.from(memoryStore.fcmTokens.values());
+  res.json({
+    success: true,
+    totalDevices: registeredDevices.length,
+    devices: registeredDevices
+  });
+});
+
+// Send/Broadcast push notification to active devices and log event
+app.post("/api/notifications/send-push", (req: Request, res: Response) => {
+  const { title, body, category, orderId, orderReference, sedeId, sedeName, customerName, total, currency, priority, clickActionUrl } = req.body;
+
+  if (!title || !body) {
+    return res.status(400).json({ error: "Título y cuerpo de la notificación son requeridos" });
+  }
+
+  const notificationPayload = {
+    id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    title,
+    body,
+    category: category || "new_order",
+    orderId: orderId || "",
+    orderReference: orderReference || "",
+    sedeId: sedeId || "sede-miami-01",
+    sedeName: sedeName || "Sede Principal (Brickell / Miami)",
+    customerName: customerName || "Cliente",
+    total: total || 0,
+    currency: currency || "USD",
+    priority: priority || "high",
+    clickActionUrl: clickActionUrl || "/#kds_cocina",
+    timestamp: new Date().toISOString(),
+    deliveredCount: Math.max(1, memoryStore.fcmTokens.size),
+    fcmStatus: "delivered_multicast"
+  };
+
+  // Add to logs
+  memoryStore.pushNotificationLogs.unshift(notificationPayload);
+
+  // Register in webhook log stream
+  memoryStore.webhookLogs.unshift({
+    id: `log-fcm-dispatch-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+    source: "fcm_messaging",
+    endpoint: "/api/notifications/send-push",
+    status: "success",
+    method: "POST",
+    statusCode: 200,
+    latencyMs: 65,
+    orderReference: orderReference || orderId,
+    eventType: `fcm.push_dispatched.${category || 'alert'}`
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Notificación push despachada exitosamente a través de Firebase Cloud Messaging",
+    notification: notificationPayload,
+    recipientsCount: Math.max(1, memoryStore.fcmTokens.size)
+  });
+});
+
+// Get push notification history logs
+app.get("/api/notifications/logs", (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    totalLogs: memoryStore.pushNotificationLogs.length,
+    activeSubscribers: Math.max(1, memoryStore.fcmTokens.size),
+    logs: memoryStore.pushNotificationLogs.slice(0, 50)
+  });
+});
+
+// Clear push notification logs
+app.delete("/api/notifications/logs", (_req: Request, res: Response) => {
+  memoryStore.pushNotificationLogs = [];
+  res.json({ success: true, message: "Historial de notificaciones push limpiado" });
+});
+
+// Simulate critical restaurant event (Order, Kitchen, Stock, Payment) for testing FCM background alerts
+app.post("/api/notifications/simulate-event", (req: Request, res: Response) => {
+  const { eventType, sede_id } = req.body;
+  const targetSede = sede_id === "sede-orlando-02" ? "Sede Orlando (La Ceja Bakery)" : "Sede Principal (Brickell / Miami)";
+  const randomOrderId = Math.floor(1003 + Math.random() * 900).toString();
+
+  let payload: any = {};
+
+  switch (eventType) {
+    case "new_order":
+      payload = {
+        title: `🔥 ¡Nuevo Pedido #${randomOrderId}! ($42.50 USD)`,
+        body: `Carlos Mendoza ordenó 2x Smash Burgers y Papas Trufadas en ${targetSede}.`,
+        category: "new_order",
+        orderId: randomOrderId,
+        sedeId: sede_id || "sede-miami-01",
+        sedeName: targetSede,
+        customerName: "Carlos Mendoza",
+        total: 42.50,
+        currency: "USD",
+        priority: "high",
+        clickActionUrl: "/#kds_cocina"
+      };
+      break;
+
+    case "payment_confirmed":
+      payload = {
+        title: `💳 Pago Confirmado #${randomOrderId} - Wompi Aprobado`,
+        body: `Transacción aprobada por $58.00 USD. Comanda enviada a KDS de cocina inmediatamente.`,
+        category: "payment_confirmed",
+        orderId: randomOrderId,
+        sedeId: sede_id || "sede-miami-01",
+        sedeName: targetSede,
+        customerName: "Mariana Gómez",
+        total: 58.00,
+        currency: "USD",
+        priority: "high",
+        clickActionUrl: "/#kds_cocina"
+      };
+      break;
+
+    case "kitchen_ready":
+      payload = {
+        title: `👨‍🍳 ¡Comanda #${randomOrderId} Lista en Cocina!`,
+        body: `Cocina finalizó preparación en ${targetSede}. Solicitar domiciliario para recogida.`,
+        category: "kitchen_ready",
+        orderId: randomOrderId,
+        sedeId: sede_id || "sede-miami-01",
+        sedeName: targetSede,
+        priority: "high",
+        clickActionUrl: "/#kanban_pedidos"
+      };
+      break;
+
+    case "stock_critical":
+      payload = {
+        title: `⚠️ Alerta Crítica: Stock Mínimo Insumos (${targetSede})`,
+        body: `Carne Angus Blend está por debajo del 10% (quedan 2.4 kg). Reorden requerida en Kardex.`,
+        category: "stock_critical",
+        sedeId: sede_id || "sede-miami-01",
+        sedeName: targetSede,
+        priority: "critical",
+        clickActionUrl: "/#kardex_inventario"
+      };
+      break;
+
+    default:
+      payload = {
+        title: `🔔 Alerta RestoBot IA`,
+        body: `Evento de prueba despachado para verificar segundo plano.`,
+        category: "system_alert",
+        priority: "normal",
+        clickActionUrl: "/#chat_bot"
+      };
+  }
+
+  const fullNotification = {
+    id: `notif_sim_${Date.now()}`,
+    ...payload,
+    timestamp: new Date().toISOString(),
+    deliveredCount: Math.max(1, memoryStore.fcmTokens.size)
+  };
+
+  memoryStore.pushNotificationLogs.unshift(fullNotification);
+
+  res.json({
+    success: true,
+    message: `Simulación de evento FCM '${eventType}' generada y enviada a los administradores`,
+    notification: fullNotification
   });
 });
 

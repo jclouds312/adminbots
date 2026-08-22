@@ -1,42 +1,199 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // =========================================================================
+    // GLOBAL PRIMITIVE HELPERS & SECURITY PREDICATES
+    // =========================================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'admin@restobot.latam' ||
+        request.auth.token.email == 'alejandro.morales@nomada.latam' ||
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'lead_devops', 'branch_manager']
+      );
+    }
+
+    // =========================================================================
+    // ENTITY VALIDATION HELPERS
+    // =========================================================================
+
+    function isValidBot(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.botName is string && data.botName.size() > 0 && data.botName.size() <= 200 &&
+             data.whatsappNumber is string && data.whatsappNumber.size() <= 50 &&
+             data.status in ['active', 'deploying', 'paused', 'sandbox'];
+    }
+
+    function isValidBranch(data) {
+      return data.sede_id is string && data.sede_id.size() <= 128 &&
+             data.nombre_sede is string && data.nombre_sede.size() > 0 && data.nombre_sede.size() <= 200 &&
+             data.ciudad is string && data.ciudad.size() <= 100 &&
+             data.moneda in ['USD', 'COP', 'MXN', 'EUR'];
+    }
+
+    function isValidOrder(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.sede_id is string && data.sede_id.size() <= 128 &&
+             data.telefono is string && data.telefono.size() <= 50 &&
+             data.estado in ['creado', 'esperando_pago', 'pagado', 'en_cocina', 'listo_cocina', 'en_camino', 'entregado', 'pago_rechazado', 'cancelado', 'anulado'] &&
+             data.total is number && data.total >= 0 &&
+             data.moneda in ['USD', 'COP', 'MXN', 'EUR'];
+    }
+
+    function isValidUserProfile(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.name is string && data.name.size() <= 150 &&
+             data.role in ['super_admin', 'lead_devops', 'branch_manager', 'driver_fleet'];
+    }
+
+    function isValidKardexItem(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.sede_id is string && data.sede_id.size() <= 128 &&
+             data.nombre_insumo is string && data.nombre_insumo.size() > 0 && data.nombre_insumo.size() <= 200 &&
+             data.stock_actual is number;
+    }
+
+    function isValidFcmToken(data) {
+      return data.token is string && data.token.size() > 0 && data.token.size() <= 1024 &&
+             data.userId is string && data.userId.size() <= 128;
+    }
+
+    function isValidNotificationLog(data) {
+      return data.title is string && data.title.size() <= 200 &&
+             data.body is string && data.body.size() <= 1000;
+    }
+
+    // =========================================================================
+    // COLLECTION ACCESS RULES (EIGHT PILLARS OF HARDENED RULES)
+    // =========================================================================
+
+    // 1. Bots Collection
     match /bots/{botId} {
-      allow read, write: if true;
+      allow read: if true; // Public bot status discovery for WhatsApp webhook & web widget
+      allow create: if isSignedIn() && isValidId(botId) && isValidBot(incoming());
+      allow update: if isSignedIn() && isValidBot(incoming()) && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'systemPrompt', 'temperature', 'aiModel', 'updatedAt'])
+      );
+      allow delete: if isAdmin();
     }
+
+    // 2. Branches / Sedes Collection
     match /branches/{branchId} {
-      allow read, write: if true;
+      allow read: if true; // Public restaurant locations for customers & menus
+      allow create: if isSignedIn() && isValidId(branchId) && isValidBranch(incoming());
+      allow update: if isSignedIn() && isValidBranch(incoming()) && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['nombre_sede', 'direccion', 'telefono_whatsapp', 'costo_domicilio', 'cobertura_km', 'lat', 'lng'])
+      );
+      allow delete: if isAdmin();
     }
+
+    // 3. Orders Collection
     match /orders/{orderId} {
-      allow read, write: if true;
+      allow read: if true; // Public tracking via order ID & link
+      allow create: if isValidId(orderId) && isValidOrder(incoming());
+      allow update: if isValidOrder(incoming()) && (
+        isAdmin() ||
+        (existing().estado in ['creado', 'esperando_pago', 'pagado', 'en_cocina', 'listo_cocina', 'en_camino'] &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['estado', 'historial_estados', 'wompi_reference', 'link_pago', 'updated_at']))
+      );
+      allow delete: if isAdmin();
     }
+
+    // 4. User Profiles Collection
     match /users/{userId} {
-      allow read, write: if true;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && (request.auth.uid == userId || isAdmin()) && isValidUserProfile(incoming());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) && isValidUserProfile(incoming()) && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'defaultSedeId'])
+      );
+      allow delete: if isAdmin();
     }
+
+    // 5. Kardex Inventory Items Collection
     match /kardex_items/{kardexId} {
-      allow read, write: if true;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(kardexId) && isValidKardexItem(incoming());
+      allow update: if isSignedIn() && isValidKardexItem(incoming()) && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['stock_actual', 'costo_unitario', 'valor_total_stock', 'estado_stock', 'ultimo_movimiento'])
+      );
+      allow delete: if isAdmin();
     }
+
+    // 6. Invoices Collection
     match /invoices/{invoiceId} {
-      allow read, write: if true;
+      allow read: if true; // Customer invoice verification
+      allow create: if isSignedIn() && isValidId(invoiceId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
+
+    // 7. Customers Collection
     match /customers/{customerId} {
-      allow read, write: if true;
+      allow read, write: if isSignedIn();
     }
+
+    // 8. Calendar Events Collection
     match /calendar_events/{eventId} {
-      allow read, write: if true;
+      allow read, write: if isSignedIn();
     }
+
+    // 9. App Settings Collection
     match /app_settings/{settingId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
+
+    // 10. Webhook Logs Collection
     match /webhook_logs/{logId} {
-      allow read, write: if true;
+      allow read: if isSignedIn();
+      allow create: if true; // Inbound webhook logging
+      allow update, delete: if isAdmin();
     }
+
+    // 11. Firebase Cloud Messaging Tokens (FCM)
+    match /fcm_tokens/{tokenId} {
+      allow read: if isSignedIn();
+      allow create, update: if isValidFcmToken(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    // 12. Push Notification Logs Collection
+    match /notification_logs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isValidNotificationLog(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    // 13. System Testing & Health Check Collection
     match /test/{docId} {
       allow read, write: if true;
     }
+
+    // Default-deny Catch-all
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
-

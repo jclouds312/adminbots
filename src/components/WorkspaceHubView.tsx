@@ -31,9 +31,10 @@ import {
   CheckCheck,
   Utensils,
   Bot,
-  X
+  X,
+  Mail
 } from 'lucide-react';
-import { RestaurantContact, GoogleDocRecord, FranchiseBrand, BranchSede } from '../types';
+import { RestaurantContact, GoogleDocRecord, FranchiseBrand, BranchSede, Order, KardexInventoryItem, MenuItem } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { 
   uploadBotConfigBackupToDrive, 
@@ -41,6 +42,8 @@ import {
   createGoogleDriveFolder, 
   uploadFileToGoogleDrive 
 } from '../services/googleDriveService';
+import { GoogleSheetsStudio } from './GoogleSheetsStudio';
+import { GmailStudio } from './GmailStudio';
 
 interface WorkspaceHubViewProps {
   onOpenPicker: () => void;
@@ -48,6 +51,11 @@ interface WorkspaceHubViewProps {
   brands?: FranchiseBrand[];
   selectedBrand?: FranchiseBrand;
   selectedSede?: BranchSede;
+  orders?: Order[];
+  kardexItems?: KardexInventoryItem[];
+  menuItems?: MenuItem[];
+  onImportMenu?: (items: MenuItem[]) => void;
+  onShowNotification?: (title: string, message: string) => void;
 }
 
 interface DriveFolder {
@@ -80,10 +88,15 @@ export const WorkspaceHubView: React.FC<WorkspaceHubViewProps> = ({
   onNavigateToTab,
   brands: initialBrands,
   selectedBrand: initialSelectedBrand,
-  selectedSede: initialSelectedSede
+  selectedSede: initialSelectedSede,
+  orders,
+  kardexItems,
+  menuItems,
+  onImportMenu,
+  onShowNotification
 }) => {
   const { t, language } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'folders' | 'drive' | 'sheets' | 'contacts'>('folders');
+  const [activeTab, setActiveTab] = useState<'folders' | 'drive' | 'sheets' | 'gmail' | 'contacts'>('folders');
   
   // Brands & Sedes State
   const [localBrands, setLocalBrands] = useState<FranchiseBrand[]>(initialBrands || []);
@@ -1002,101 +1015,16 @@ export const WorkspaceHubView: React.FC<WorkspaceHubViewProps> = ({
 
       {/* TAB 3: GOOGLE SHEETS MASTER */}
       {activeTab === 'sheets' && (
-        <div className="space-y-4">
-          <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                  <span>Hoja Maestra: RestoBot IA - Sincronizador Maestro USA & LATAM</span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  ID: <code className="text-indigo-400 font-mono">1RestoBot_Master_Spreadsheet_USA_Live_2026</code>
-                </p>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleSyncSheets}
-                  disabled={isSyncingSheets}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncingSheets ? 'animate-spin' : ''}`} />
-                  <span>{isSyncingSheets ? 'Sincronizando...' : sheetsSyncSuccess ? '¡Sincronizado!' : 'Sincronizar Pedidos'}</span>
-                </button>
-
-                <a
-                  href="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700"
-                >
-                  <span>Abrir en Sheets</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            </div>
-
-            {/* Sheets Preview Table */}
-            <div className="rounded-xl border border-slate-800 overflow-hidden text-xs">
-              <table className="w-full text-left">
-                <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
-                  <tr>
-                    <th className="p-3">Pestaña / Tab</th>
-                    <th className="p-3">Filas Sincronizadas</th>
-                    <th className="p-3">Última Sincronización</th>
-                    <th className="p-3">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                  <tr className="hover:bg-slate-800/40">
-                    <td className="p-3 font-bold text-emerald-400 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>Pedidos_Live</span>
-                    </td>
-                    <td className="p-3 font-mono">{sheetsRowsCount} filas en tiempo real</td>
-                    <td className="p-3 text-slate-400">{lastSyncedTime}</td>
-                    <td className="p-3">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        Auto-Sync WABA ✓
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-800/40">
-                    <td className="p-3 font-bold text-amber-400">Kardex_Inventario</td>
-                    <td className="p-3 font-mono">28 insumos calculados</td>
-                    <td className="p-3 text-slate-400">Hace 5 min</td>
-                    <td className="p-3">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        Sincronizado
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-800/40">
-                    <td className="p-3 font-bold text-indigo-400">Cierre_Ventas_USD</td>
-                    <td className="p-3 font-mono">54 balances diarios</td>
-                    <td className="p-3 text-slate-400">Hoy 11:30 AM</td>
-                    <td className="p-3">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        Sincronizado
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-800/40">
-                    <td className="p-3 font-bold text-purple-400">Clientes_WhatsApp</td>
-                    <td className="p-3 font-mono">189 números indexados</td>
-                    <td className="p-3 text-slate-400">Hace 12 min</td>
-                    <td className="p-3">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        Sincronizado
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <GoogleSheetsStudio
+          brands={localBrands}
+          selectedBrand={selectedBrandState || undefined}
+          selectedSede={selectedSedeState || undefined}
+          orders={orders}
+          kardexItems={kardexItems}
+          menuItems={menuItems}
+          onImportMenu={onImportMenu}
+          onShowNotification={onShowNotification}
+        />
       )}
 
       {/* TAB 4: CONTACTS CRM */}
